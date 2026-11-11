@@ -1,0 +1,2 @@
+// 예약과 직원 화면 (/api/reservations, 공지를 뺀 /api/admin, /api/director)
+// 공통 의존성은 루트 build.gradle 에서 넣는다. 이 서비스만 쓰는 것은 없다.

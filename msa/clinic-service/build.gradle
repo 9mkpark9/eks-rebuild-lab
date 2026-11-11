@@ -1,0 +1,2 @@
+// 반려동물·공지·예약 가능 시간 (/api/pets, /api/notices, /api/slots, /api/admin/notices) + 슬롯 자동 생성
+// 공통 의존성은 루트 build.gradle 에서 넣는다. 이 서비스만 쓰는 것은 없다.

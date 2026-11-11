@@ -1,0 +1,6 @@
+# 공통 설정(세션, DB, Redis, 종료 처리)은 common 의 vet-common.yml 에 있다.
+spring:
+  application:
+    name: vet-auth
+  config:
+    import: classpath:vet-common.yml

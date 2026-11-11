@@ -1,0 +1,4 @@
+// 로그인·로그아웃·내 정보 (/api/auth)
+dependencies {
+    implementation 'org.springframework.security:spring-security-crypto'    // BCrypt 만 사용. 비밀번호 검증은 이 서비스만 한다
+}

@@ -1,0 +1,52 @@
+// 보듬 동물병원 예약 API — 서비스 3개 + 공용 라이브러리 (was/ 를 나눈 것)
+// Gradle, Spring Boot, Java 버전은 was/build.gradle 과 같다.
+//   ./gradlew build -Pversion=1.0.0
+//   → auth-service/build/libs/vet-auth-1.0.0.jar
+//     clinic-service/build/libs/vet-clinic-1.0.0.jar
+//     reservation-service/build/libs/vet-reservation-1.0.0.jar
+plugins {
+    id 'org.springframework.boot' version '4.1.1' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+}
+
+def appVersion = providers.gradleProperty('version').getOrElse('1.0.0')   // -Pversion=x.y.z 로 바꾼다
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    group = 'kr.bodeum'
+    version = appVersion
+
+    java {
+        toolchain { languageVersion = JavaLanguageVersion.of(21) }
+    }
+
+    repositories { mavenCentral() }
+
+    // 스프링 부트 플러그인을 적용하지 않는 common 도 같은 버전 묶음을 쓴다
+    dependencyManagement {
+        imports { mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES }
+    }
+
+    tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }   // 소스에 한글 문구가 있다
+    tasks.withType(Test).configureEach { useJUnitPlatform() }
+}
+
+// 서비스 세 개의 공통 설정: common 을 쓰고, 실행 가능한 jar 하나만 만든다
+configure(subprojects.findAll { it.name.endsWith('-service') }) {
+    apply plugin: 'org.springframework.boot'
+
+    dependencies {
+        implementation project(':common')
+        testImplementation testFixtures(project(':common'))
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+
+    // auth-service → vet-auth-1.0.0.jar (이미지 이름 vet-auth 와 맞춘다)
+    tasks.named('bootJar') {
+        archiveFileName = "vet-${project.name - '-service'}-${project.version}.jar"
+    }
+    tasks.named('jar') { enabled = false }
+}

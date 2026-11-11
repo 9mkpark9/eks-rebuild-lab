@@ -1,0 +1,40 @@
+# 세 서비스의 공통 설정. 각 서비스의 application.yml 이 spring.config.import 로 불러온다.
+# 세션 쿠키 이름과 만료 시간이 서비스마다 다르면 로그인이 공유되지 않으므로 한 곳에만 둔다.
+#
+# 접속 정보와 비밀은 was/ 와 같은 이름의 환경 변수로 받는다:
+#   SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD, SPRING_DATA_REDIS_HOST / _PORT / _PASSWORD
+# 새로 더한 환경 변수:
+#   DB_POOL_MAX   인스턴스 하나가 여는 DB 연결 수 (기본 10)
+#   REDIS_TLS     Redis 전송 중 암호화 (기본 true. 클러스터 안 Redis 는 false)
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/vet?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+    hikari:
+      # 서비스 3개 x 복제본 수 x 이 값 이 MySQL max_connections 를 넘지 않게 맞춘다
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MAX:10}
+      connection-timeout: 3000     # 기본 30000ms. 연결 부족을 3초 안에 오류로 드러낸다
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}   # 환경 변수가 없으면 6379
+      ssl:
+        enabled: ${REDIS_TLS:true}
+      timeout: 2s
+  session:
+    timeout: 30m                   # 요청마다 연장
+
+server:
+  port: 8080
+  shutdown: graceful
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: SESSION
+        http-only: true
+        same-site: lax
+
+logging:
+  level:
+    root: INFO

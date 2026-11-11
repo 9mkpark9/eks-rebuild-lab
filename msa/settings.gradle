@@ -1,0 +1,6 @@
+rootProject.name = 'vet-msa'
+
+include 'common'
+include 'auth-service'
+include 'clinic-service'
+include 'reservation-service'

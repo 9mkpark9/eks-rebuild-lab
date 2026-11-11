@@ -1,0 +1,17 @@
+// 세 서비스가 함께 쓰는 코드: support 전체, auth 의 Auth 와 SessionUser, 공통 설정(vet-common.yml)
+// 실행 파일이 아니라 라이브러리다. 스프링 부트 플러그인은 적용하지 않는다.
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'   // 서비스 테스트가 함께 쓰는 도우미 (src/testFixtures)
+}
+
+dependencies {
+    // 세 서비스 모두 웹 요청을 받고, 같은 DB 를 읽고, 같은 Redis 세션을 본다
+    api 'org.springframework.boot:spring-boot-starter-webmvc'
+    api 'org.springframework.boot:spring-boot-starter-jdbc'                  // JdbcTemplate + HikariCP
+    api 'org.springframework.boot:spring-boot-starter-data-redis'
+    api 'org.springframework.boot:spring-boot-starter-session-data-redis'    // 세션 = Redis
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    testFixturesImplementation 'org.springframework.boot:spring-boot-starter-webmvc'
+}
