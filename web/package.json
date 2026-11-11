@@ -1,0 +1,26 @@
+{
+  "name": "vet-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "동물병원 예약 시스템 WEB 계층 — 정적 소개 페이지(site)와 예약·관리자 화면(app)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit -p tsconfig.json && vite build && node scripts/build-site.mjs",
+    "build:site": "node scripts/build-site.mjs",
+    "build:s3": "node scripts/build-s3.mjs",
+    "start": "node server/mock-server.mjs",
+    "preview": "npm run build && npm start"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^4.5.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

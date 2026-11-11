@@ -1,0 +1,305 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  동물병원 예약 시스템 - WEB 계층 (10.2장 vet01-web). WAS 계층(vet01-was) 다음에 배포한다.
+  외부 ALB → WEB(nginx) 고정 EC2 2대(AZ a, c). 오토스케일링 없음.
+  WEB 인스턴스별 CPU·상태 경보, 5xx·응답 시간 경보, 대시보드(인스턴스별 CPU·메모리·크레딧, ALB, RDS, 비용 지표).
+  내부 ALB 주소, WAS 인스턴스 ID, 로그 버킷은 vet01-was 에서 가져온다.
+
+Parameters:
+  ClientName: { Type: String, Default: vet01 }
+  AppVersion: { Type: String, Default: 1.0.0 }
+  ArtifactBucket: { Type: String }
+  WebInstanceType: { Type: String, Default: t3.small }   # 시작 템플릿 기본값 (아래 A·C 가 덮어쓴다)
+  # 사양 비교 실험: WEB-a 와 WEB-c 를 다른 사양으로 띄워 같은 부하에서 비교한다 (최종 구성은 같은 사양 2대)
+  WebInstanceTypeA: { Type: String, Default: t4g.small }
+  WebArchA: { Type: String, Default: arm64, AllowedValues: [arm64, x86_64] }
+  WebInstanceTypeC: { Type: String, Default: t3.micro }
+  WebArchC: { Type: String, Default: x86_64, AllowedValues: [arm64, x86_64] }
+  CpuAlarmThreshold:
+    Type: Number
+    Default: 80
+    Description: 인스턴스 평균 CPU(%)가 2분 연속 이 값 이상이면 과부하 경보
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+  AmiIdArm:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+
+Conditions:
+  ArmA: !Equals [!Ref WebArchA, arm64]
+  ArmC: !Equals [!Ref WebArchC, arm64]
+
+Resources:
+  # ── 외부 ALB → WEB ──
+  ExternalAlb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${ClientName}-alb-ext"
+      Scheme: internet-facing
+      Subnets: !Split [",", !ImportValue { "Fn::Sub": "${ClientName}-PublicSubnets" }]
+      SecurityGroups: [!ImportValue { "Fn::Sub": "${ClientName}-SgAlbExt" }]
+      LoadBalancerAttributes:
+        - { Key: access_logs.s3.enabled, Value: "true" }
+        - { Key: access_logs.s3.bucket, Value: !ImportValue { "Fn::Sub": "${ClientName}-AlbLogBucket" } }
+        - { Key: access_logs.s3.prefix, Value: ext }
+        - { Key: idle_timeout.timeout_seconds, Value: "60" }
+  WebTg:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${ClientName}-tg-web"
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      Protocol: HTTP
+      Port: 80
+      TargetType: instance
+      Targets:                          # 오토스케일링 대신 고정 2대를 직접 등록
+        - { Id: !Ref WebA, Port: 80 }
+        - { Id: !Ref WebC, Port: 80 }
+      HealthCheckPath: /health          # 간격 5초, 시간 제한 4초, 정상 2회, 비정상 2회 (5장)
+      HealthCheckIntervalSeconds: 5
+      HealthCheckTimeoutSeconds: 4
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - { Key: deregistration_delay.timeout_seconds, Value: "30" }
+        - { Key: stickiness.enabled, Value: "false" }       # 고정 세션 끔 — 세션은 ElastiCache
+        - { Key: load_balancing.algorithm.type, Value: round_robin }
+  ExternalListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ExternalAlb
+      Protocol: HTTP
+      Port: 80
+      DefaultActions: [{ Type: forward, TargetGroupArn: !Ref WebTg }]
+
+  # ── WEB 시작 템플릿 (부록 E.2). 고정 인스턴스 2대가 같은 템플릿으로 뜬다 ──
+  WebLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub "${ClientName}-lt-web"
+      LaunchTemplateData:
+        ImageId: !Ref AmiId
+        InstanceType: !Ref WebInstanceType
+        IamInstanceProfile: { Name: !ImportValue { "Fn::Sub": "${ClientName}-WebProfile" } }
+        SecurityGroupIds: [!ImportValue { "Fn::Sub": "${ClientName}-SgWeb" }]
+        Monitoring: { Enabled: true }          # 세부 모니터링(1분)
+        MetadataOptions: { HttpTokens: required, HttpPutResponseHopLimit: 2 }
+        TagSpecifications:
+          - { ResourceType: volume, Tags: [{ Key: Project, Value: !Ref ClientName }, { Key: Tier, Value: web }] }
+        UserData:
+          Fn::Base64: !Sub
+            - |
+              #!/bin/bash
+              # WEB 사용자 데이터 (Amazon Linux 2023)
+              set -euo pipefail
+              REGION="${AWS::Region}"
+              CLIENT="${ClientName}"
+              ARTIFACT_BUCKET="${ArtifactBucket}"
+              APP_VERSION="${AppVersion}"
+              INTERNAL_ALB_DNS="${InternalAlbDns}"
+
+              dnf install -y nginx amazon-cloudwatch-agent
+              aws s3 cp "s3://$ARTIFACT_BUCKET/web/vet-web-$APP_VERSION.tar.gz" /tmp/web.tgz --region "$REGION"
+              rm -rf /usr/share/nginx/vet && mkdir -p /usr/share/nginx/vet
+              tar -xzf /tmp/web.tgz -C /usr/share/nginx/vet      # site/(소개 HTML) + app/(예약·직원 SPA)
+              aws s3 cp "s3://$ARTIFACT_BUCKET/web/nginx.conf" /etc/nginx/nginx.conf --region "$REGION"
+              sed -i "s/__INTERNAL_ALB_DNS__/$INTERNAL_ALB_DNS/" /etc/nginx/nginx.conf
+              nginx -t
+
+              cat > /etc/vet-cwagent.json <<CW
+              {
+                "agent": { "metrics_collection_interval": 60 },
+                "metrics": {
+                  "append_dimensions": { "InstanceId": "\${!aws:InstanceId}" },
+                  "aggregation_dimensions": [["InstanceId"]],
+                  "metrics_collected": {
+                    "mem": { "measurement": ["mem_used_percent"] },
+                    "disk": { "measurement": ["used_percent"], "resources": ["/"] }
+                  }
+                },
+                "logs": { "logs_collected": { "files": { "collect_list": [
+                  { "file_path": "/var/log/nginx/access.log", "log_group_name": "/$CLIENT/web-access", "log_stream_name": "{instance_id}" },
+                  { "file_path": "/var/log/nginx/error.log", "log_group_name": "/$CLIENT/web-error", "log_stream_name": "{instance_id}" }
+                ] } } }
+              }
+              CW
+              /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/etc/vet-cwagent.json -s || true
+              systemctl enable --now nginx
+            - InternalAlbDns: !ImportValue { "Fn::Sub": "${ClientName}-InternalAlbDns" }
+
+  # ── WEB 고정 인스턴스 2대 (AZ a, c) ──
+  WebA:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate: { LaunchTemplateId: !Ref WebLaunchTemplate, Version: !GetAtt WebLaunchTemplate.LatestVersionNumber }
+      InstanceType: !Ref WebInstanceTypeA            # 시작 템플릿 값을 덮어쓴다
+      ImageId: !If [ArmA, !Ref AmiIdArm, !Ref AmiId]   # Arm(t4g)이면 arm64 AMI
+      SubnetId: !Select [0, !Split [",", !ImportValue { "Fn::Sub": "${ClientName}-WebSubnets" }]]
+      Tags:
+        - { Key: Name, Value: !Sub "${ClientName}-web-a" }
+        - { Key: SpecTest, Value: !Ref WebInstanceTypeA }
+        - { Key: Tier, Value: web }
+  WebC:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate: { LaunchTemplateId: !Ref WebLaunchTemplate, Version: !GetAtt WebLaunchTemplate.LatestVersionNumber }
+      InstanceType: !Ref WebInstanceTypeC
+      ImageId: !If [ArmC, !Ref AmiIdArm, !Ref AmiId]
+      SubnetId: !Select [1, !Split [",", !ImportValue { "Fn::Sub": "${ClientName}-WebSubnets" }]]
+      Tags:
+        - { Key: Name, Value: !Sub "${ClientName}-web-c" }
+        - { Key: SpecTest, Value: !Ref WebInstanceTypeC }
+        - { Key: Tier, Value: web }
+
+  # ── 경보 (9장) ──
+  AlarmCpuWebA:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-web-a-cpu-high"
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions: [{ Name: InstanceId, Value: !Ref WebA }]
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: !Ref CpuAlarmThreshold
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmCpuWebC:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-web-c-cpu-high"
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions: [{ Name: InstanceId, Value: !Ref WebC }]
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: !Ref CpuAlarmThreshold
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmStatusWebA:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-web-a-status-check"
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed
+      Dimensions: [{ Name: InstanceId, Value: !Ref WebA }]
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmStatusWebC:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-web-c-status-check"
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed
+      Dimensions: [{ Name: InstanceId, Value: !Ref WebC }]
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmUnhealthyWeb:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-web-unhealthy"
+      Namespace: AWS/ApplicationELB
+      MetricName: UnHealthyHostCount
+      Dimensions:
+        - { Name: LoadBalancer, Value: !GetAtt ExternalAlb.LoadBalancerFullName }
+        - { Name: TargetGroup, Value: !GetAtt WebTg.TargetGroupFullName }
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  Alarm5xx:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-target-5xx"
+      Namespace: AWS/ApplicationELB
+      MetricName: HTTPCode_Target_5XX_Count
+      Dimensions: [{ Name: LoadBalancer, Value: !GetAtt ExternalAlb.LoadBalancerFullName }]
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+  AlarmElb5xx:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-elb-5xx"
+      Namespace: AWS/ApplicationELB
+      MetricName: HTTPCode_ELB_5XX_Count
+      Dimensions: [{ Name: LoadBalancer, Value: !GetAtt ExternalAlb.LoadBalancerFullName }]
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+  AlarmLatency:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-latency-p95"
+      Namespace: AWS/ApplicationELB
+      MetricName: TargetResponseTime
+      Dimensions: [{ Name: LoadBalancer, Value: !GetAtt ExternalAlb.LoadBalancerFullName }]
+      ExtendedStatistic: p95
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1                # 초. 문서 기준 "모든 API p95 1초 미만"
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  # 대시보드는 외부·내부 ALB와 WAS 인스턴스를 모두 보므로 마지막 계층(WEB)에 둔다
+  Dashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${ClientName}-dashboard"
+      DashboardBody: !Sub
+        - |
+          {"widgets":[
+           {"type":"metric","x":0,"y":0,"width":12,"height":6,"properties":{"title":"인스턴스별 CPU (%)","region":"${AWS::Region}","stat":"Average","period":60,"yAxis":{"left":{"min":0,"max":100}},
+             "metrics":[["AWS/EC2","CPUUtilization","InstanceId","${WebA}",{"label":"web-a"}],["...","${WebC}",{"label":"web-c"}],["...","${WasA}",{"label":"was-a"}],["...","${WasC}",{"label":"was-c"}]],
+             "annotations":{"horizontal":[{"value":${CpuAlarmThreshold},"label":"과부하 경보"}]}}},
+           {"type":"metric","x":12,"y":0,"width":12,"height":6,"properties":{"title":"인스턴스별 메모리 사용률 (%) — CloudWatch 에이전트","region":"${AWS::Region}","stat":"Average","period":60,"yAxis":{"left":{"min":0,"max":100}},
+             "metrics":[["CWAgent","mem_used_percent","InstanceId","${WebA}",{"label":"web-a"}],["...","${WebC}",{"label":"web-c"}],["...","${WasA}",{"label":"was-a"}],["...","${WasC}",{"label":"was-c"}]]}},
+           {"type":"metric","x":0,"y":6,"width":12,"height":6,"properties":{"title":"외부 ALB 요청 수·5xx (1분 합계)","region":"${AWS::Region}","stat":"Sum","period":60,
+             "metrics":[["AWS/ApplicationELB","RequestCount","LoadBalancer","${ExtAlb}"],[".","HTTPCode_ELB_5XX_Count",".","."],[".","HTTPCode_Target_5XX_Count",".","."]]}},
+           {"type":"metric","x":12,"y":6,"width":12,"height":6,"properties":{"title":"응답 시간 p50·p95·p99 (초)","region":"${AWS::Region}","period":60,
+             "metrics":[["AWS/ApplicationELB","TargetResponseTime","LoadBalancer","${ExtAlb}",{"stat":"p50","label":"외부 p50"}],["...",{"stat":"p95","label":"외부 p95"}],["...",{"stat":"p99","label":"외부 p99"}],["AWS/ApplicationELB","TargetResponseTime","LoadBalancer","${IntAlb}",{"stat":"p95","label":"내부(WAS) p95"}]]}},
+           {"type":"metric","x":0,"y":12,"width":12,"height":6,"properties":{"title":"대상별 요청 수 (분산)","region":"${AWS::Region}","stat":"Sum","period":60,
+             "metrics":[["AWS/ApplicationELB","RequestCountPerTarget","TargetGroup","${WebTgName}","LoadBalancer","${ExtAlb}",{"label":"WEB 대상당"}],["AWS/ApplicationELB","RequestCountPerTarget","TargetGroup","${WasTgName}","LoadBalancer","${IntAlb}",{"label":"WAS 대상당"}]]}},
+           {"type":"metric","x":12,"y":12,"width":12,"height":6,"properties":{"title":"정상 대상 수","region":"${AWS::Region}","stat":"Minimum","period":60,
+             "metrics":[["AWS/ApplicationELB","HealthyHostCount","TargetGroup","${WebTgName}","LoadBalancer","${ExtAlb}",{"label":"WEB"}],["AWS/ApplicationELB","HealthyHostCount","TargetGroup","${WasTgName}","LoadBalancer","${IntAlb}",{"label":"WAS"}]]}},
+           {"type":"metric","x":0,"y":18,"width":12,"height":6,"properties":{"title":"T3 CPU 크레딧 잔량·초과 과금 크레딧 (비용)","region":"${AWS::Region}","period":300,
+             "metrics":[["AWS/EC2","CPUCreditBalance","InstanceId","${WebA}",{"stat":"Average","label":"web-a 잔량"}],["...","${WebC}",{"stat":"Average","label":"web-c 잔량"}],["...","${WasA}",{"stat":"Average","label":"was-a 잔량"}],["...","${WasC}",{"stat":"Average","label":"was-c 잔량"}],
+                        ["AWS/EC2","CPUSurplusCreditsCharged","InstanceId","${WasA}",{"stat":"Sum","yAxis":"right","label":"was-a 초과 과금"}],["...","${WasC}",{"stat":"Sum","yAxis":"right","label":"was-c 초과 과금"}],["...","${WebA}",{"stat":"Sum","yAxis":"right","label":"web-a 초과 과금"}],["...","${WebC}",{"stat":"Sum","yAxis":"right","label":"web-c 초과 과금"}]]}},
+           {"type":"metric","x":12,"y":18,"width":12,"height":6,"properties":{"title":"ALB 사용 LCU (비용)","region":"${AWS::Region}","stat":"Average","period":60,
+             "metrics":[["AWS/ApplicationELB","ConsumedLCUs","LoadBalancer","${ExtAlb}",{"label":"외부 ALB"}],["AWS/ApplicationELB","ConsumedLCUs","LoadBalancer","${IntAlb}",{"label":"내부 ALB"}]]}},
+           {"type":"metric","x":0,"y":24,"width":12,"height":6,"properties":{"title":"RDS CPU·연결 수","region":"${AWS::Region}","period":60,
+             "metrics":[["AWS/RDS","CPUUtilization","DBInstanceIdentifier","${ClientName}-db",{"stat":"Average"}],[".","DatabaseConnections",".",".",{"stat":"Maximum","yAxis":"right"}]]}},
+           {"type":"metric","x":12,"y":24,"width":12,"height":6,"properties":{"title":"인스턴스별 네트워크 송신 (바이트)","region":"${AWS::Region}","stat":"Sum","period":60,
+             "metrics":[["AWS/EC2","NetworkOut","InstanceId","${WebA}",{"label":"web-a"}],["...","${WebC}",{"label":"web-c"}],["...","${WasA}",{"label":"was-a"}],["...","${WasC}",{"label":"was-c"}]]}}
+          ]}
+        - ExtAlb: !GetAtt ExternalAlb.LoadBalancerFullName
+          IntAlb: !ImportValue { "Fn::Sub": "${ClientName}-InternalAlbFullName" }
+          WebTgName: !GetAtt WebTg.TargetGroupFullName
+          WasTgName: !ImportValue { "Fn::Sub": "${ClientName}-WasTgFullName" }
+          WasA: !ImportValue { "Fn::Sub": "${ClientName}-WasInstanceA" }
+          WasC: !ImportValue { "Fn::Sub": "${ClientName}-WasInstanceC" }
+
+Outputs:
+  ExternalAlbDns: { Value: !GetAtt ExternalAlb.DNSName, Export: { Name: !Sub "${ClientName}-ExternalAlbDns" } }
+  ExternalAlbFullName: { Value: !GetAtt ExternalAlb.LoadBalancerFullName }
+  WebTgArn: { Value: !Ref WebTg }
+  WebInstanceA: { Value: !Ref WebA }
+  WebInstanceC: { Value: !Ref WebC }

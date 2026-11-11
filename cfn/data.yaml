@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  동물병원 예약 시스템 - 데이터 (10.2장 vet01-data).
+  RDS for MySQL 8.4 Multi-AZ(마스터 비밀번호는 RDS가 Secrets Manager로 관리), ElastiCache(Redis, 전송 중 암호화 + AUTH),
+  앱 DB 계정·AUTH 토큰 비밀, DB 초기화용 관리 EC2.
+
+Parameters:
+  ClientName:
+    Type: String
+    Default: vet01
+  DbInstanceClass:
+    Type: String
+    Default: db.t3.small   # db.t3.micro 는 기본 연결 한도 약 60이라 여유가 없다 (8장)
+  DbEngineVersion:
+    Type: String
+    Default: "8.4.11"
+  MultiAZ:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+  CacheNodeType:
+    Type: String
+    Default: cache.t3.micro
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Resources:
+  # ── 비밀: 앱 DB 계정(vet_app), ElastiCache AUTH 토큰 ──
+  AppDbSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${ClientName}/db/app"
+      Description: WAS 전용 DB 계정 (SELECT, INSERT, UPDATE 만)
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"vet_app"}'
+        GenerateStringKey: password
+        PasswordLength: 24
+        ExcludePunctuation: true
+  RedisAuthSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "${ClientName}/redis/auth"
+      Description: ElastiCache AUTH 토큰
+      GenerateSecretString:
+        SecretStringTemplate: "{}"
+        GenerateStringKey: token
+        PasswordLength: 32
+        ExcludePunctuation: true
+
+  # ── RDS for MySQL ──
+  DbSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub "${ClientName}-db-subnets"
+      DBSubnetGroupDescription: db subnets (AZ a, c)
+      SubnetIds: !Split [",", !ImportValue { "Fn::Sub": "${ClientName}-DbSubnets" }]
+  DbParams:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Family: mysql8.4
+      Description: vet - KST, utf8mb4
+      Parameters:
+        time_zone: Asia/Seoul
+        character_set_server: utf8mb4
+        collation_server: utf8mb4_0900_ai_ci
+  Db:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot          # 스택 삭제 때 최종 스냅샷을 남긴다 (10.9)
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: !Sub "${ClientName}-db"
+      Engine: mysql
+      EngineVersion: !Ref DbEngineVersion
+      DBInstanceClass: !Ref DbInstanceClass
+      AllocatedStorage: "20"
+      StorageType: gp3
+      StorageEncrypted: true
+      MultiAZ: !Ref MultiAZ
+      MasterUsername: admin
+      ManageMasterUserPassword: true   # 비밀번호는 Secrets Manager(rds!db-...)가 관리
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      DBParameterGroupName: !Ref DbParams
+      VPCSecurityGroups: [!ImportValue { "Fn::Sub": "${ClientName}-SgDb" }]
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: false
+      CopyTagsToSnapshot: true
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-db" }]
+
+  # ── ElastiCache (로그인 세션 저장소) ──
+  CacheSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Properties:
+      CacheSubnetGroupName: !Sub "${ClientName}-cache-subnets"
+      Description: db subnets (AZ a, c)
+      SubnetIds: !Split [",", !ImportValue { "Fn::Sub": "${ClientName}-DbSubnets" }]
+  Cache:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Properties:
+      ReplicationGroupId: !Sub "${ClientName}-cache"
+      ReplicationGroupDescription: login sessions (Spring Session)
+      Engine: redis
+      EngineVersion: "7.1"
+      CacheNodeType: !Ref CacheNodeType
+      NumCacheClusters: 1                # 세션만 저장 (5장). 노드 1개라 자동 장애 조치는 끈다
+      AutomaticFailoverEnabled: false
+      MultiAZEnabled: false
+      CacheSubnetGroupName: !Ref CacheSubnetGroup
+      SecurityGroupIds: [!ImportValue { "Fn::Sub": "${ClientName}-SgCache" }]
+      TransitEncryptionEnabled: true
+      AtRestEncryptionEnabled: true
+      AuthToken: !Sub "{{resolve:secretsmanager:${RedisAuthSecret}:SecretString:token}}"
+      Port: 6379
+
+  # ── 관리 EC2: DB 초기화·테스트 사이 초기화·TC-07 검증 SQL 실행 (Session Manager로만 접속) ──
+  OpsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: t3.micro
+      SubnetId: !ImportValue { "Fn::Sub": "${ClientName}-AppSubnetA" }
+      SecurityGroupIds: [!ImportValue { "Fn::Sub": "${ClientName}-SgOps" }]
+      IamInstanceProfile: !ImportValue { "Fn::Sub": "${ClientName}-OpsProfile" }
+      MetadataOptions: { HttpTokens: required }
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          dnf install -y mariadb105 jq
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-ops" }]
+
+Outputs:
+  DbEndpoint: { Value: !GetAtt Db.Endpoint.Address, Export: { Name: !Sub "${ClientName}-DbEndpoint" } }
+  DbMasterSecretArn: { Value: !GetAtt Db.MasterUserSecret.SecretArn }
+  RedisEndpoint: { Value: !GetAtt Cache.PrimaryEndPoint.Address, Export: { Name: !Sub "${ClientName}-RedisEndpoint" } }
+  OpsInstanceId: { Value: !Ref OpsInstance }

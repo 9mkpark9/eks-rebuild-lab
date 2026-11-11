@@ -1,0 +1,14 @@
+{"widgets":[
+ {"type":"metric","x":0,"y":0,"width":12,"height":6,"properties":{"title":"외부 ALB 요청 수·5xx","region":"ap-northeast-2","stat":"Sum","period":60,
+   "metrics":[["AWS/ApplicationELB","RequestCount","LoadBalancer","EXT_ALB"],[".","HTTPCode_ELB_5XX_Count",".","."],[".","HTTPCode_Target_5XX_Count",".","."]]}},
+ {"type":"metric","x":12,"y":0,"width":12,"height":6,"properties":{"title":"응답 시간 p95 (외부·내부 ALB)","region":"ap-northeast-2","stat":"p95","period":60,
+   "metrics":[["AWS/ApplicationELB","TargetResponseTime","LoadBalancer","EXT_ALB"],["AWS/ApplicationELB","TargetResponseTime","LoadBalancer","INT_ALB"]]}},
+ {"type":"metric","x":0,"y":6,"width":12,"height":6,"properties":{"title":"ASG 평균 CPU","region":"ap-northeast-2","stat":"Average","period":60,
+   "metrics":[["AWS/EC2","CPUUtilization","AutoScalingGroupName","vet01-asg-web"],["AWS/EC2","CPUUtilization","AutoScalingGroupName","vet01-asg-was"]]}},
+ {"type":"metric","x":12,"y":6,"width":12,"height":6,"properties":{"title":"정상 대상 수","region":"ap-northeast-2","stat":"Minimum","period":60,
+   "metrics":[["AWS/ApplicationELB","HealthyHostCount","TargetGroup","WEB_TG","LoadBalancer","EXT_ALB"],["AWS/ApplicationELB","HealthyHostCount","TargetGroup","WAS_TG","LoadBalancer","INT_ALB"]]}},
+ {"type":"metric","x":0,"y":12,"width":12,"height":6,"properties":{"title":"RDS CPU·연결 수","region":"ap-northeast-2","period":60,
+   "metrics":[["AWS/RDS","CPUUtilization","DBInstanceIdentifier","vet01-db",{"stat":"Average"}],[".","DatabaseConnections",".",".",{"stat":"Maximum","yAxis":"right"}]]}},
+ {"type":"metric","x":12,"y":12,"width":12,"height":6,"properties":{"title":"메모리 사용률 (CloudWatch 에이전트)","region":"ap-northeast-2","stat":"Average","period":60,
+   "metrics":[["CWAgent","mem_used_percent","AutoScalingGroupName","vet01-asg-web"],["CWAgent","mem_used_percent","AutoScalingGroupName","vet01-asg-was"]]}}
+]}

@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f7a64">
+<meta property="og:site_name" content="보듬 동물병원">
+<meta property="og:type" content="website">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/site.css">
+<script>document.documentElement.classList.add('js');</script>
+<title>보듬 동물병원 | 우리 아이의 평생 주치의</title>
+<meta name="description" content="보듬 동물병원 — 수의사 3인이 30분 1:1로 진료합니다. 일반 진료·예방접종·건강검진을 진료 시간 밖에도 온라인으로 예약하세요. 월–토 09:00–18:00, 일요일 휴진.">
+</head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div class="topbar">
+  <div class="container topbar__inner">
+    <p class="topbar__status" data-clinic-status
+       data-open="09:00" data-close="18:00"
+       data-lunch-start="13:00" data-lunch-end="14:00"
+       data-closed-days="0">
+      <span class="dot" aria-hidden="true"></span><span data-clinic-status-text>월–토 09:00–18:00</span>
+    </p>
+    <ul class="topbar__info">
+      <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>대표전화 <a href="tel:0212345678">02-1234-5678</a></li>
+      <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#clock"/></svg>월–토 09:00–18:00 · 점심 13:00–14:00 · 일요일 휴진</li>
+    </ul>
+  </div>
+</div>
+<header class="header" data-header>
+  <div class="container header__inner">
+    <a class="brand" href="/" aria-label="보듬 동물병원 홈">
+      <svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
+        <rect width="40" height="40" rx="12" fill="#0f7a64"/>
+        <ellipse cx="20" cy="25.5" rx="7.6" ry="6.3" fill="#fff"/>
+        <ellipse cx="11.2" cy="18.2" rx="2.9" ry="3.6" transform="rotate(-22 11.2 18.2)" fill="#fff"/>
+        <ellipse cx="16.4" cy="12.4" rx="2.9" ry="3.8" transform="rotate(-6 16.4 12.4)" fill="#fff"/>
+        <ellipse cx="23.6" cy="12.4" rx="2.9" ry="3.8" transform="rotate(6 23.6 12.4)" fill="#fff"/>
+        <ellipse cx="28.8" cy="18.2" rx="2.9" ry="3.6" transform="rotate(22 28.8 18.2)" fill="#fff"/>
+        <path d="M18.7 21.8h2.6v2.5h2.5v2.6h-2.5v2.5h-2.6v-2.5h-2.5v-2.6h2.5z" fill="#ff7a2f"/>
+      </svg>
+      <span class="brand__text"><span class="brand__name">보듬 동물병원</span><span class="brand__en">BODEUM ANIMAL HOSPITAL</span></span>
+    </a>
+    <nav class="gnb" aria-label="주 메뉴">
+      <ul>
+        <li><a href="/about" data-nav="about">병원 소개</a></li>
+        <li><a href="/doctors" data-nav="doctors">의료진</a></li>
+        <li><a href="/services" data-nav="services">진료 안내</a></li>
+        <li><a href="/notices" data-nav="notices">공지사항</a></li>
+      </ul>
+    </nav>
+    <div class="header__actions">
+      <a class="header__link" href="/app/reservations"><svg class="icon icon--sm" aria-hidden="true"><use href="/assets/img/icons.svg#user"/></svg>내 예약</a>
+      <a class="btn btn--accent btn--sm header__cta" href="/app/reserve">온라인 예약</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-toggle>
+        <svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#menu"/></svg>
+        <span class="sr-only">메뉴 열기</span>
+      </button>
+    </div>
+  </div>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="모바일 메뉴" hidden>
+    <ul>
+      <li><a href="/about" data-nav="about">병원 소개<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/doctors" data-nav="doctors">의료진<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/services" data-nav="services">진료 안내<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/notices" data-nav="notices">공지사항<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/app/reservations">내 예약 조회<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+    </ul>
+    <div class="mobile-menu__cta">
+      <a class="btn btn--outline" href="tel:0212345678"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화 문의</a>
+      <a class="btn btn--accent" href="/app/reserve">온라인 예약</a>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+  <!-- 히어로 -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <div>
+        <p class="hero__eyebrow"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#heart"/></svg>수의사 3인 협진 · 30분 1:1 예약 진료</p>
+        <h1 class="hero__title">우리 아이의 평생 주치의,<br><span class="c-primary">보듬 동물병원</span></h1>
+        <p class="hero__desc">기다림 없이, 서두름 없이. 예약한 시간에는 우리 아이만 봅니다. 진료 시간 밖에도 휴대폰으로 예약하고 변경하세요.</p>
+        <div class="hero__cta">
+          <a class="btn btn--accent btn--lg" href="/app/reserve">온라인 예약하기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+          <a class="btn btn--outline btn--lg" href="tel:0212345678"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>02-1234-5678</a>
+        </div>
+        <ul class="hero__stats">
+          <li><strong>3<small>명</small></strong><span>전문 수의사</span></li>
+          <li><strong>30<small>분</small></strong><span>1:1 진료 시간</span></li>
+          <li><strong>24<small>시간</small></strong><span>온라인 예약 접수</span></li>
+        </ul>
+      </div>
+      <div class="hero__visual">
+        <img src="/assets/img/hero-pets.svg" alt="진료를 기다리는 강아지와 고양이" width="560" height="500">
+        <div class="float-card float-card--a">
+          <span class="float-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#shield"/></svg></span>
+          <span><strong>예약 시간 보장</strong><span>한 시간대에 한 아이만</span></span>
+        </div>
+        <div class="float-card float-card--b">
+          <span class="float-card__icon float-card__icon--accent"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar-check"/></svg></span>
+          <span><strong>14일 앞까지 예약</strong><span>신청 후 병원 확인 시 확정</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 빠른 메뉴 카드 -->
+  <section class="quickcards" aria-label="자주 찾는 메뉴">
+    <div class="container">
+      <div class="quickcards__grid">
+        <a class="quickcard quickcard--accent" href="/app/reserve">
+          <span class="quickcard__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar-check"/></svg></span>
+          <span class="quickcard__title">온라인 예약</span>
+          <span class="quickcard__desc">진료 항목과 시간을 바로 선택</span>
+          <svg class="icon quickcard__arrow" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg>
+        </a>
+        <a class="quickcard" href="#hours">
+          <span class="quickcard__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#clock"/></svg></span>
+          <span class="quickcard__title">진료 시간</span>
+          <span class="quickcard__desc">월–토 09:00–18:00</span>
+          <svg class="icon quickcard__arrow" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg>
+        </a>
+        <a class="quickcard" href="/about#location">
+          <span class="quickcard__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#pin"/></svg></span>
+          <span class="quickcard__title">오시는 길</span>
+          <span class="quickcard__desc">지하철 가상선 보듬역 2번 출구 도보 4분</span>
+          <svg class="icon quickcard__arrow" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg>
+        </a>
+        <a class="quickcard" href="/doctors">
+          <span class="quickcard__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#doctor"/></svg></span>
+          <span class="quickcard__title">의료진 소개</span>
+          <span class="quickcard__desc">내과 · 예방의학 · 영상의학</span>
+          <svg class="icon quickcard__arrow" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 고정 공지 (API에서 불러오고, 실패하면 숨긴다) -->
+  <section class="notice-strip" data-pinned-notice hidden aria-label="주요 공지">
+    <div class="container">
+      <a class="notice-strip__inner" href="/notices">
+        <svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#megaphone"/></svg>
+        <span class="badge badge--accent" data-pinned-category>공지</span>
+        <span class="notice-strip__title" data-pinned-title></span>
+        <span class="notice-strip__date" data-pinned-date></span>
+        <svg class="icon icon--sm" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- 진료 과목 -->
+  <section class="section" id="services">
+    <div class="container">
+      <div class="section__head section__head--center reveal">
+        <p class="eyebrow">Medical Services</p>
+        <h2 class="section__title">보듬의 진료 과목</h2>
+        <p class="section__desc">모든 진료는 수의사 1명이 30분 동안 한 아이만 보는 예약제로 운영합니다.</p>
+      </div>
+      <div class="services">
+        <article class="service-card reveal">
+          <span class="service-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#stethoscope"/></svg></span>
+          <h3 class="service-card__title">일반 진료</h3>
+          <p class="service-card__desc">내과·피부·소화기·안과 등 증상 진료. 증상과 생활 습관을 충분히 듣고 진료 계획을 함께 세웁니다.</p>
+          <ul class="service-card__list">
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>구토·설사 등 소화기 증상</li>
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>피부·귀 질환, 알레르기</li>
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>노령동물 만성질환 관리</li>
+          </ul>
+          <div class="service-card__foot">
+            <span class="badge">30분 · 예약제</span>
+            <a class="text-link" href="/app/reserve?type=GENERAL">예약하기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+          </div>
+        </article>
+        <article class="service-card service-card--accent reveal">
+          <span class="service-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#syringe"/></svg></span>
+          <h3 class="service-card__title">예방접종</h3>
+          <p class="service-card__desc">종합백신·광견병·심장사상충 예방. 나이와 생활 환경에 맞춘 접종 일정을 안내해 드립니다.</p>
+          <ul class="service-card__list">
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>강아지·고양이 종합백신</li>
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>광견병·켄넬코프 접종</li>
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>심장사상충·외부기생충 예방</li>
+          </ul>
+          <div class="service-card__foot">
+            <span class="badge badge--accent">할인 기간 운영</span>
+            <a class="text-link" href="/app/reserve?type=VACCINE">예약하기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+          </div>
+        </article>
+        <article class="service-card service-card--info reveal">
+          <span class="service-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#clipboard"/></svg></span>
+          <h3 class="service-card__title">건강검진</h3>
+          <p class="service-card__desc">혈액·영상 검사와 연령별 맞춤 검진. 결과는 보호자님 눈높이에서 하나하나 설명합니다.</p>
+          <ul class="service-card__list">
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>기본 혈액·소변 검사</li>
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>엑스레이·초음파 영상 검사</li>
+            <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check"/></svg>7세 이상 노령 맞춤 검진</li>
+          </ul>
+          <div class="service-card__foot">
+            <span class="badge">30분 · 예약제</span>
+            <a class="text-link" href="/app/reserve?type=CHECKUP">예약하기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 보듬의 약속 -->
+  <section class="section section--soft">
+    <div class="container promise">
+      <div class="reveal">
+        <p class="eyebrow">Our Promise</p>
+        <h2 class="section__title">예약한 시간은<br>온전히 우리 아이의 시간입니다</h2>
+        <p class="section__desc">전화가 몰리는 시간에도, 병원 문을 닫은 저녁에도 같은 방식으로 예약을 받고, 같은 시간에 두 보호자가 기다리는 일이 생기지 않도록 예약을 관리합니다.</p>
+        <p class="promise__badge"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#shield"/></svg>한 진료 시간에는 한 아이만 — 중복 예약 0건을 원칙으로 합니다.</p>
+      </div>
+      <div class="promise__list">
+        <div class="promise-item reveal">
+          <p class="promise-item__num">01</p>
+          <h3 class="promise-item__title">30분 1:1 진료</h3>
+          <p class="promise-item__desc">수의사 1명이 30분 동안 한 아이만 진료합니다. 충분히 묻고, 충분히 설명합니다.</p>
+        </div>
+        <div class="promise-item reveal">
+          <p class="promise-item__num">02</p>
+          <h3 class="promise-item__title">진료 시간 밖에도 예약</h3>
+          <p class="promise-item__desc">밤이나 휴진일에도 온라인으로 예약을 신청하고, 변경·취소도 직접 할 수 있습니다.</p>
+        </div>
+        <div class="promise-item reveal">
+          <p class="promise-item__num">03</p>
+          <h3 class="promise-item__title">반려동물별 예약 관리</h3>
+          <p class="promise-item__desc">여러 아이를 키워도 아이마다 따로 예약합니다. 접수 전에 어느 아이의 진료인지 미리 준비합니다.</p>
+        </div>
+        <div class="promise-item reveal">
+          <p class="promise-item__num">04</p>
+          <h3 class="promise-item__title">병원 확인 후 확정</h3>
+          <p class="promise-item__desc">신청한 시간은 바로 잡아 두고, 증상과 진료 항목을 병원이 확인한 뒤 예약을 확정합니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 의료진 -->
+  <section class="section">
+    <div class="container">
+      <div class="section__head section__head--row reveal">
+        <div>
+          <p class="eyebrow">Veterinarians</p>
+          <h2 class="section__title">보듬 의료진</h2>
+          <p class="section__desc">분야별 수의사 3명이 서로의 진료를 함께 살핍니다.</p>
+        </div>
+        <a class="btn btn--outline" href="/doctors">의료진 자세히 보기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+      </div>
+      <div class="doctors">
+        <article class="doctor-card reveal">
+          <div class="doctor-card__photo"><img src="/assets/img/vet-1.svg" alt="김하늘 대표원장" width="168" height="168" loading="lazy"></div>
+          <div class="doctor-card__body">
+            <span class="badge badge--navy">대표원장</span>
+            <h3 class="doctor-card__name">김하늘<small>수의사</small></h3>
+            <p class="doctor-card__field">내과 · 노령동물 진료</p>
+            <p class="doctor-card__intro">아이의 오늘보다 10년 뒤를 함께 고민하는 수의사가 되겠습니다.</p>
+          </div>
+        </article>
+        <article class="doctor-card reveal">
+          <div class="doctor-card__photo"><img src="/assets/img/vet-2.svg" alt="이도윤 원장" width="168" height="168" loading="lazy"></div>
+          <div class="doctor-card__body">
+            <span class="badge badge--primary">원장</span>
+            <h3 class="doctor-card__name">이도윤<small>수의사</small></h3>
+            <p class="doctor-card__field">예방의학 · 피부과</p>
+            <p class="doctor-card__intro">아프기 전에 지키는 진료, 예방접종부터 꼼꼼히 챙기겠습니다.</p>
+          </div>
+        </article>
+        <article class="doctor-card reveal">
+          <div class="doctor-card__photo"><img src="/assets/img/vet-3.svg" alt="박서연 원장" width="168" height="168" loading="lazy"></div>
+          <div class="doctor-card__body">
+            <span class="badge badge--primary">원장</span>
+            <h3 class="doctor-card__name">박서연<small>수의사</small></h3>
+            <p class="doctor-card__field">건강검진 · 영상의학</p>
+            <p class="doctor-card__intro">검사 결과를 보호자님 눈높이에서 하나하나 설명해 드립니다.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 예약 방법 -->
+  <section class="section section--cream">
+    <div class="container">
+      <div class="section__head section__head--center reveal">
+        <p class="eyebrow">How to Book</p>
+        <h2 class="section__title">온라인 예약, 이렇게 진행돼요</h2>
+        <p class="section__desc">휴대폰으로 1분이면 충분합니다. 예약 상태는 ‘내 예약’에서 언제든 확인할 수 있어요.</p>
+      </div>
+      <ol class="steps">
+        <li class="step reveal">
+          <span class="step__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#user"/></svg></span>
+          <h3 class="step__title">로그인</h3>
+          <p class="step__desc">병원에서 안내받은 보호자 계정으로 로그인합니다.</p>
+        </li>
+        <li class="step reveal">
+          <span class="step__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#paw"/></svg></span>
+          <h3 class="step__title">반려동물 선택</h3>
+          <p class="step__desc">진료받을 아이를 고릅니다. 처음이면 이름·종류·나이만 등록하세요.</p>
+        </li>
+        <li class="step reveal">
+          <span class="step__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar"/></svg></span>
+          <h3 class="step__title">진료 항목·시간 선택</h3>
+          <p class="step__desc">오늘부터 14일 안의 비어 있는 30분 진료 시간을 선택합니다.</p>
+        </li>
+        <li class="step reveal">
+          <span class="step__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#check-circle"/></svg></span>
+          <h3 class="step__title">병원 확인 후 확정</h3>
+          <p class="step__desc">신청 즉시 시간이 잡히고, 병원이 확인하면 ‘예약 확정’으로 바뀝니다.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 진료시간 · 오시는 길 · 공지 -->
+  <section class="section" id="hours">
+    <div class="container info-grid">
+      <article class="info-card reveal">
+        <div class="info-card__head"><h2 class="info-card__title"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#clock"/></svg>진료 시간</h2></div>
+        <table class="hours-table" data-hours-table>
+          <tbody>
+            <tr data-days="1,2,3,4,5"><th scope="row">평일 (월–금)</th><td>09:00 – 18:00</td></tr>
+            <tr data-days="6"><th scope="row">토요일</th><td>09:00 – 18:00</td></tr>
+            <tr><th scope="row">점심시간</th><td>13:00 – 14:00</td></tr>
+            <tr class="is-off" data-days="0"><th scope="row">일요일·공휴일</th><td>휴진</td></tr>
+          </tbody>
+        </table>
+        <p class="info-card__phone"><a href="tel:0212345678"><svg class="icon icon--lg" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg><span>02-1234-5678<small>진료 중에는 전화 연결이 늦을 수 있어요</small></span></a></p>
+      </article>
+      <article class="info-card reveal">
+        <div class="info-card__head">
+          <h2 class="info-card__title"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#pin"/></svg>오시는 길</h2>
+          <a class="text-link" href="/about#location">자세히<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a>
+        </div>
+        <a class="map-thumb" href="/about#location"><img src="/assets/img/map.svg" alt="약도: 보듬역 2번 출구에서 보듬로를 따라 도보 4분" width="600" height="360" loading="lazy"></a>
+        <ul class="addr-list">
+          <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#building"/></svg>서울특별시 가상구 보듬로 123, 1층</li>
+          <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#train"/></svg>지하철 가상선 보듬역 2번 출구 도보 4분</li>
+          <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#car"/></svg>건물 뒤편 전용 주차 6대 · 진료 시 1시간 무료</li>
+        </ul>
+      </article>
+      <article class="info-card reveal">
+        <div class="info-card__head">
+          <h2 class="info-card__title"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#megaphone"/></svg>공지사항</h2>
+          <a class="text-link" href="/notices">전체 보기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a>
+        </div>
+        <ul class="notice-list" data-notice-list data-limit="5">
+          <li><div class="skeleton" style="margin:18px 0;width:90%"></div></li>
+          <li><div class="skeleton" style="margin:18px 0;width:75%"></div></li>
+          <li><div class="skeleton" style="margin:18px 0;width:82%"></div></li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section section--tight" style="padding-top:0">
+    <div class="container">
+      <div class="cta-band reveal">
+        <div>
+          <h2 class="cta-band__title">지금 예약 가능한 시간을 확인해 보세요</h2>
+          <p class="cta-band__desc">오늘부터 14일 안의 진료 시간을 실시간으로 보여 드립니다.</p>
+        </div>
+        <div class="cta-band__actions">
+          <a class="btn btn--white btn--lg" href="/app/reserve">온라인 예약하기</a>
+          <a class="btn btn--line-white btn--lg" href="tel:0212345678">전화 문의</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<aside class="quick" aria-label="빠른 메뉴">
+  <a class="quick__item quick__item--accent" href="/app/reserve"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar-check"/></svg>온라인<br>예약</a>
+  <a class="quick__item" href="tel:0212345678"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화<br>상담</a>
+  <a class="quick__item" href="/about#location"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#pin"/></svg>오시는<br>길</a>
+  <a class="quick__item" href="/app/reservations"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#list"/></svg>내 예약</a>
+  <button class="quick__top" type="button" data-scroll-top><svg class="icon icon--sm" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-up"/></svg>TOP</button>
+</aside>
+
+<div class="mobile-cta">
+  <a class="mobile-cta__call" href="tel:0212345678"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화 문의</a>
+  <a class="mobile-cta__book" href="/app/reserve"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar-check"/></svg>온라인 예약</a>
+</div>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div>
+      <a class="brand" href="/" aria-label="보듬 동물병원 홈">
+        <svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
+          <rect width="40" height="40" rx="12" fill="#1f9a7f"/>
+          <ellipse cx="20" cy="25.5" rx="7.6" ry="6.3" fill="#fff"/>
+          <ellipse cx="11.2" cy="18.2" rx="2.9" ry="3.6" transform="rotate(-22 11.2 18.2)" fill="#fff"/>
+          <ellipse cx="16.4" cy="12.4" rx="2.9" ry="3.8" transform="rotate(-6 16.4 12.4)" fill="#fff"/>
+          <ellipse cx="23.6" cy="12.4" rx="2.9" ry="3.8" transform="rotate(6 23.6 12.4)" fill="#fff"/>
+          <ellipse cx="28.8" cy="18.2" rx="2.9" ry="3.6" transform="rotate(22 28.8 18.2)" fill="#fff"/>
+          <path d="M18.7 21.8h2.6v2.5h2.5v2.6h-2.5v2.5h-2.6v-2.5h-2.5v-2.6h2.5z" fill="#ff7a2f"/>
+        </svg>
+        <span class="brand__text"><span class="brand__name">보듬 동물병원</span><span class="brand__en">BODEUM ANIMAL HOSPITAL</span></span>
+      </a>
+      <p class="footer__slogan">우리 아이의 평생 주치의, 오늘도 보듬겠습니다.</p>
+    </div>
+    <div class="footer__info">
+      <p><strong>보듬 동물병원</strong> · 대표 수의사 김하늘 · 사업자등록번호 000-00-00000</p>
+      <p>서울특별시 가상구 보듬로 123, 1층</p>
+      <p>대표전화 02-1234-5678 · 월–토 09:00–18:00 · 점심 13:00–14:00 · 일요일 휴진</p>
+    </div>
+    <ul class="footer__links">
+      <li><a href="/about">병원 소개</a></li>
+      <li><a href="/doctors">의료진</a></li>
+      <li><a href="/services">진료 안내</a></li>
+      <li><a href="/notices">공지사항</a></li>
+      <li><a class="is-strong" href="/services#privacy">개인정보 처리방침</a></li>
+    </ul>
+  </div>
+  <div class="container footer__bottom">
+    <p>© 2026 BODEUM ANIMAL HOSPITAL. All rights reserved.</p>
+    <p>이 사이트는 부하분산 시스템 과제를 위한 가상 동물병원입니다. 병원명·주소·전화번호·의료진은 실제와 관계없습니다.</p>
+  </div>
+</footer>
+<script src="/assets/js/site.js" defer></script>
+</body>
+</html>

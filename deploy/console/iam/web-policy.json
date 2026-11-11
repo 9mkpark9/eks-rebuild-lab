@@ -1,0 +1,6 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Sid": "ReadWebArtifacts", "Effect": "Allow", "Action": "s3:GetObject", "Resource": "arn:aws:s3:::vet01-artifacts-ACCOUNT_ID/web/*" }
+  ]
+}

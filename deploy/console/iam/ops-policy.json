@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Sid": "FindDb", "Effect": "Allow", "Action": "rds:DescribeDBInstances", "Resource": "*" },
+    {
+      "Sid": "ReadDbSecrets",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": [
+        "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:rds!*",
+        "arn:aws:secretsmanager:ap-northeast-2:ACCOUNT_ID:secret:vet01/db/app-*"
+      ]
+    },
+    { "Sid": "ReadDbFiles", "Effect": "Allow", "Action": "s3:GetObject", "Resource": "arn:aws:s3:::vet01-artifacts-ACCOUNT_ID/db/*" },
+    {
+      "Sid": "ListDbFiles",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::vet01-artifacts-ACCOUNT_ID",
+      "Condition": { "StringLike": { "s3:prefix": "db/*" } }
+    }
+  ]
+}

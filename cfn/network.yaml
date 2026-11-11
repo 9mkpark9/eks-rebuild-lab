@@ -1,0 +1,154 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  동물병원 예약 시스템 - 네트워크 (10.2장 vet01-network).
+  VPC, 서브넷 8개(AZ 2개 x public/web/app/db), 인터넷 게이트웨이, NAT Gateway 1개, 라우팅, S3 게이트웨이 엔드포인트.
+
+Parameters:
+  ClientName:
+    Type: String
+    Default: vet01
+    AllowedPattern: "[a-z0-9-]+"
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-vpc" }]
+
+  Igw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-igw" }]
+  IgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: { VpcId: !Ref Vpc, InternetGatewayId: !Ref Igw }
+
+  # ── 서브넷: 10.0.{0,1}=public, {10,11}=web, {20,21}=app, {30,31}=db ──
+  PublicA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: !Select [0, !Cidr [!Ref VpcCidr, 256, 8]]
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-public-a" }]
+  PublicC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}c"
+      CidrBlock: !Select [1, !Cidr [!Ref VpcCidr, 256, 8]]
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-public-c" }]
+  # web·app 서브넷은 호스트 이름 유형을 리소스 이름(인스턴스 ID)으로 — 분산 확인 헤더에 사설 IP가 드러나지 않게 (5장)
+  WebA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: !Select [10, !Cidr [!Ref VpcCidr, 256, 8]]
+      PrivateDnsNameOptionsOnLaunch: { HostnameType: resource-name, EnableResourceNameDnsARecord: true }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-web-a" }]
+  WebC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}c"
+      CidrBlock: !Select [11, !Cidr [!Ref VpcCidr, 256, 8]]
+      PrivateDnsNameOptionsOnLaunch: { HostnameType: resource-name, EnableResourceNameDnsARecord: true }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-web-c" }]
+  AppA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: !Select [20, !Cidr [!Ref VpcCidr, 256, 8]]
+      PrivateDnsNameOptionsOnLaunch: { HostnameType: resource-name, EnableResourceNameDnsARecord: true }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-app-a" }]
+  AppC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}c"
+      CidrBlock: !Select [21, !Cidr [!Ref VpcCidr, 256, 8]]
+      PrivateDnsNameOptionsOnLaunch: { HostnameType: resource-name, EnableResourceNameDnsARecord: true }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-app-c" }]
+  DbA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: !Select [30, !Cidr [!Ref VpcCidr, 256, 8]]
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-db-a" }]
+  DbC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}c"
+      CidrBlock: !Select [31, !Cidr [!Ref VpcCidr, 256, 8]]
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-db-c" }]
+
+  # ── NAT Gateway 1개 (비용 때문에 한 AZ에만 — 11장 한계, 운영은 AZ마다 1개) ──
+  NatEip:
+    Type: AWS::EC2::EIP
+    DependsOn: IgwAttach
+    Properties:
+      Domain: vpc
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-nat-eip" }]
+  Nat:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      SubnetId: !Ref PublicA
+      AllocationId: !GetAtt NatEip.AllocationId
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-nat" }]
+
+  PublicRt:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-rt-public" }]
+  PublicDefault:
+    Type: AWS::EC2::Route
+    DependsOn: IgwAttach
+    Properties: { RouteTableId: !Ref PublicRt, DestinationCidrBlock: 0.0.0.0/0, GatewayId: !Ref Igw }
+  PrivateRt:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-rt-private" }]
+  PrivateDefault:
+    Type: AWS::EC2::Route
+    Properties: { RouteTableId: !Ref PrivateRt, DestinationCidrBlock: 0.0.0.0/0, NatGatewayId: !Ref Nat }
+
+  RtPublicA: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref PublicA, RouteTableId: !Ref PublicRt } }
+  RtPublicC: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref PublicC, RouteTableId: !Ref PublicRt } }
+  RtWebA: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref WebA, RouteTableId: !Ref PrivateRt } }
+  RtWebC: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref WebC, RouteTableId: !Ref PrivateRt } }
+  RtAppA: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref AppA, RouteTableId: !Ref PrivateRt } }
+  RtAppC: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref AppC, RouteTableId: !Ref PrivateRt } }
+  RtDbA: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref DbA, RouteTableId: !Ref PrivateRt } }
+  RtDbC: { Type: AWS::EC2::SubnetRouteTableAssociation, Properties: { SubnetId: !Ref DbC, RouteTableId: !Ref PrivateRt } }
+
+  # 배포 파일을 S3에서 받을 때 NAT를 거치지 않게 (게이트웨이 엔드포인트는 추가 요금 없음, 12장)
+  S3Endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref Vpc
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      VpcEndpointType: Gateway
+      RouteTableIds: [!Ref PrivateRt, !Ref PublicRt]
+
+Outputs:
+  VpcId: { Value: !Ref Vpc, Export: { Name: !Sub "${ClientName}-VpcId" } }
+  VpcCidr: { Value: !Ref VpcCidr, Export: { Name: !Sub "${ClientName}-VpcCidr" } }
+  PublicSubnets: { Value: !Join [",", [!Ref PublicA, !Ref PublicC]], Export: { Name: !Sub "${ClientName}-PublicSubnets" } }
+  WebSubnets: { Value: !Join [",", [!Ref WebA, !Ref WebC]], Export: { Name: !Sub "${ClientName}-WebSubnets" } }
+  AppSubnets: { Value: !Join [",", [!Ref AppA, !Ref AppC]], Export: { Name: !Sub "${ClientName}-AppSubnets" } }
+  AppSubnetA: { Value: !Ref AppA, Export: { Name: !Sub "${ClientName}-AppSubnetA" } }
+  DbSubnets: { Value: !Join [",", [!Ref DbA, !Ref DbC]], Export: { Name: !Sub "${ClientName}-DbSubnets" } }

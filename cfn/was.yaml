@@ -1,0 +1,294 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  동물병원 예약 시스템 - WAS 계층 (10.2장 vet01-was). WEB 계층(vet01-web)보다 먼저 배포한다.
+  내부 ALB → WAS(Spring Boot) 고정 EC2 2대(AZ a, c). 오토스케일링 없음 — 과부하 테스트에서 고정 대수의 한계와 비용을 재기 위해.
+  ALB 액세스 로그 버킷(외부 ALB도 같이 씀), WAS 인스턴스별 CPU·상태 경보, DB 경보.
+
+Parameters:
+  ClientName: { Type: String, Default: vet01 }
+  AppVersion: { Type: String, Default: 1.0.0 }
+  ArtifactBucket: { Type: String }
+  WasInstanceType: { Type: String, Default: t3.medium }
+  CpuAlarmThreshold:
+    Type: Number
+    Default: 80
+    Description: 인스턴스 평균 CPU(%)가 2분 연속 이 값 이상이면 과부하 경보
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Resources:
+  # ── ALB 액세스 로그 (9장). 내부·외부 ALB가 함께 쓴다 ──
+  AlbLogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ClientName}-alb-logs-${AWS::AccountId}"
+      PublicAccessBlockConfiguration: { BlockPublicAcls: true, BlockPublicPolicy: true, IgnorePublicAcls: true, RestrictPublicBuckets: true }
+      LifecycleConfiguration: { Rules: [{ Id: expire, Status: Enabled, ExpirationInDays: 30 }] }
+  AlbLogBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AlbLogBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { AWS: arn:aws:iam::600734575887:root }   # ap-northeast-2 의 ELB 계정
+            Action: s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${AlbLogBucket}/*"
+
+  # ── 내부 ALB → WAS ──
+  InternalAlb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: AlbLogBucketPolicy
+    Properties:
+      Name: !Sub "${ClientName}-alb-int"
+      Scheme: internal
+      Subnets: !Split [",", !ImportValue { "Fn::Sub": "${ClientName}-AppSubnets" }]
+      SecurityGroups: [!ImportValue { "Fn::Sub": "${ClientName}-SgAlbInt" }]
+      LoadBalancerAttributes:
+        - { Key: access_logs.s3.enabled, Value: "true" }
+        - { Key: access_logs.s3.bucket, Value: !Ref AlbLogBucket }
+        - { Key: access_logs.s3.prefix, Value: int }
+  WasTg:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${ClientName}-tg-was"
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      Protocol: HTTP
+      Port: 8080
+      TargetType: instance
+      Targets:                          # 오토스케일링 대신 고정 2대를 직접 등록
+        - { Id: !Ref WasA, Port: 8080 }
+        - { Id: !Ref WasC, Port: 8080 }
+      HealthCheckPath: /health          # 간격 5초, 시간 제한 4초, 정상 2회, 비정상 2회 (5장)
+      HealthCheckIntervalSeconds: 5
+      HealthCheckTimeoutSeconds: 4
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+      TargetGroupAttributes:
+        - { Key: deregistration_delay.timeout_seconds, Value: "30" }
+        - { Key: stickiness.enabled, Value: "false" }       # 고정 세션 끔 — 세션은 ElastiCache
+        - { Key: load_balancing.algorithm.type, Value: round_robin }
+  InternalListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref InternalAlb
+      Protocol: HTTP
+      Port: 8080
+      DefaultActions: [{ Type: forward, TargetGroupArn: !Ref WasTg }]
+
+  # ── WAS 시작 템플릿 (부록 E.1). 고정 인스턴스 2대가 같은 템플릿으로 뜬다 ──
+  WasLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub "${ClientName}-lt-was"
+      LaunchTemplateData:
+        ImageId: !Ref AmiId
+        InstanceType: !Ref WasInstanceType
+        IamInstanceProfile: { Name: !ImportValue { "Fn::Sub": "${ClientName}-WasProfile" } }
+        SecurityGroupIds: [!ImportValue { "Fn::Sub": "${ClientName}-SgWas" }]
+        Monitoring: { Enabled: true }          # 세부 모니터링(1분)
+        MetadataOptions: { HttpTokens: required, HttpPutResponseHopLimit: 2 }
+        TagSpecifications:
+          - { ResourceType: volume, Tags: [{ Key: Project, Value: !Ref ClientName }, { Key: Tier, Value: was }] }
+        UserData:
+          Fn::Base64: !Sub
+            - |
+              #!/bin/bash
+              # WAS 사용자 데이터 (Amazon Linux 2023). 비밀 값은 넣지 않는다.
+              set -euo pipefail
+              REGION="${AWS::Region}"
+              CLIENT="${ClientName}"
+              ARTIFACT_BUCKET="${ArtifactBucket}"
+              APP_VERSION="${AppVersion}"
+              DB_HOST="${DbHost}"
+              REDIS_HOST="${RedisHost}"
+
+              dnf install -y java-21-amazon-corretto-headless amazon-cloudwatch-agent jq
+              id vet >/dev/null 2>&1 || useradd --system --home-dir /opt/vet --shell /sbin/nologin vet
+              mkdir -p /opt/vet /var/log/vet
+              aws s3 cp "s3://$ARTIFACT_BUCKET/was/vet-api-$APP_VERSION.jar" /opt/vet/vet-api.jar --region "$REGION"
+
+              # 비밀이 아닌 설정
+              cat > /opt/vet/app.conf <<CONF
+              export REGION="$REGION"
+              export DB_SECRET_ID="$CLIENT/db/app"
+              export REDIS_SECRET_ID="$CLIENT/redis/auth"
+              export SPRING_DATASOURCE_URL="jdbc:mysql://$DB_HOST:3306/vet?connectionTimeZone=LOCAL&characterEncoding=UTF-8"
+              export SPRING_DATA_REDIS_HOST="$REDIS_HOST"
+              export SPRING_DATA_REDIS_PORT="6379"
+              CONF
+
+              # 시작할 때마다 Secrets Manager에서 읽어 프로세스 환경 변수로만 넘긴다 (디스크에 남기지 않음)
+              cat > /opt/vet/start.sh <<'START'
+              #!/bin/bash
+              set -euo pipefail
+              . /opt/vet/app.conf
+              db=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "$DB_SECRET_ID" --query SecretString --output text)
+              redis=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "$REDIS_SECRET_ID" --query SecretString --output text)
+              export SPRING_DATASOURCE_USERNAME="$(jq -r .username <<<"$db")"
+              export SPRING_DATASOURCE_PASSWORD="$(jq -r .password <<<"$db")"
+              export SPRING_DATA_REDIS_PASSWORD="$(jq -r .token <<<"$redis")"
+              exec java -Xms1g -Xmx2g -Duser.timezone=Asia/Seoul -jar /opt/vet/vet-api.jar --logging.file.name=/var/log/vet/app.log
+              START
+              chmod 750 /opt/vet/start.sh
+              chown -R vet:vet /opt/vet /var/log/vet
+
+              cat > /etc/systemd/system/vet-api.service <<'UNIT'
+              [Unit]
+              Description=Vet reservation API
+              After=network-online.target
+              Wants=network-online.target
+              [Service]
+              User=vet
+              ExecStart=/opt/vet/start.sh
+              Restart=on-failure
+              RestartSec=5
+              SuccessExitStatus=143
+              [Install]
+              WantedBy=multi-user.target
+              UNIT
+
+              # 메모리·디스크 지표(인스턴스별)와 앱 로그를 CloudWatch로
+              cat > /opt/vet/cwagent.json <<CW
+              {
+                "agent": { "metrics_collection_interval": 60 },
+                "metrics": {
+                  "append_dimensions": { "InstanceId": "\${!aws:InstanceId}" },
+                  "aggregation_dimensions": [["InstanceId"]],
+                  "metrics_collected": {
+                    "mem": { "measurement": ["mem_used_percent"] },
+                    "disk": { "measurement": ["used_percent"], "resources": ["/"] }
+                  }
+                },
+                "logs": { "logs_collected": { "files": { "collect_list": [
+                  { "file_path": "/var/log/vet/app.log", "log_group_name": "/$CLIENT/was", "log_stream_name": "{instance_id}" }
+                ] } } }
+              }
+              CW
+              /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/vet/cwagent.json -s || true
+              systemctl daemon-reload
+              systemctl enable --now vet-api
+            - DbHost: !ImportValue { "Fn::Sub": "${ClientName}-DbEndpoint" }
+              RedisHost: !ImportValue { "Fn::Sub": "${ClientName}-RedisEndpoint" }
+
+  # ── WAS 고정 인스턴스 2대 (AZ a, c) ──
+  WasA:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate: { LaunchTemplateId: !Ref WasLaunchTemplate, Version: !GetAtt WasLaunchTemplate.LatestVersionNumber }
+      SubnetId: !Select [0, !Split [",", !ImportValue { "Fn::Sub": "${ClientName}-AppSubnets" }]]
+      Tags:
+        - { Key: Name, Value: !Sub "${ClientName}-was-a" }
+        - { Key: Tier, Value: was }
+  WasC:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate: { LaunchTemplateId: !Ref WasLaunchTemplate, Version: !GetAtt WasLaunchTemplate.LatestVersionNumber }
+      SubnetId: !Select [1, !Split [",", !ImportValue { "Fn::Sub": "${ClientName}-AppSubnets" }]]
+      Tags:
+        - { Key: Name, Value: !Sub "${ClientName}-was-c" }
+        - { Key: Tier, Value: was }
+
+  # ── 경보 (9장): WAS 인스턴스별 과부하·상태, 대상 상태, DB ──
+  AlarmCpuWasA:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-was-a-cpu-high"
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions: [{ Name: InstanceId, Value: !Ref WasA }]
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: !Ref CpuAlarmThreshold
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmCpuWasC:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-was-c-cpu-high"
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions: [{ Name: InstanceId, Value: !Ref WasC }]
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: !Ref CpuAlarmThreshold
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmStatusWasA:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-was-a-status-check"
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed
+      Dimensions: [{ Name: InstanceId, Value: !Ref WasA }]
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmStatusWasC:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-was-c-status-check"
+      Namespace: AWS/EC2
+      MetricName: StatusCheckFailed
+      Dimensions: [{ Name: InstanceId, Value: !Ref WasC }]
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmUnhealthyWas:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-was-unhealthy"
+      Namespace: AWS/ApplicationELB
+      MetricName: UnHealthyHostCount
+      Dimensions:
+        - { Name: LoadBalancer, Value: !GetAtt InternalAlb.LoadBalancerFullName }
+        - { Name: TargetGroup, Value: !GetAtt WasTg.TargetGroupFullName }
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+  AlarmDbCpu:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-db-cpu"
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Dimensions: [{ Name: DBInstanceIdentifier, Value: !Sub "${ClientName}-db" }]
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+  AlarmDbConn:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ClientName}-db-connections"
+      Namespace: AWS/RDS
+      MetricName: DatabaseConnections
+      Dimensions: [{ Name: DBInstanceIdentifier, Value: !Sub "${ClientName}-db" }]
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 45            # 한도(57 이상)의 80% (8장)
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+
+Outputs:
+  InternalAlbDns: { Value: !GetAtt InternalAlb.DNSName, Export: { Name: !Sub "${ClientName}-InternalAlbDns" } }
+  InternalAlbFullName: { Value: !GetAtt InternalAlb.LoadBalancerFullName, Export: { Name: !Sub "${ClientName}-InternalAlbFullName" } }
+  WasTgFullName: { Value: !GetAtt WasTg.TargetGroupFullName, Export: { Name: !Sub "${ClientName}-WasTgFullName" } }
+  AlbLogBucket: { Value: !Ref AlbLogBucket, Export: { Name: !Sub "${ClientName}-AlbLogBucket" } }
+  WasTgArn: { Value: !Ref WasTg }
+  WasInstanceA: { Value: !Ref WasA, Export: { Name: !Sub "${ClientName}-WasInstanceA" } }
+  WasInstanceC: { Value: !Ref WasC, Export: { Name: !Sub "${ClientName}-WasInstanceC" } }

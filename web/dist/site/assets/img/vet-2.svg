@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="이도윤 원장 일러스트">
+  <defs><clipPath id="c"><circle cx="120" cy="120" r="120"/></clipPath></defs>
+  <g clip-path="url(#c)">
+    <rect width="240" height="240" fill="#fff1e6"/>
+    <circle cx="44" cy="56" r="26" fill="#ffe3cf"/>
+    <path d="M28 240c4-50 40-72 92-74 52 2 88 24 92 74z" fill="#fff" stroke="#e9dfd6" stroke-width="2"/>
+    <path d="M98 170l22 44 22-44z" fill="#2f5d8a"/>
+    <path d="M98 170l22 44-16 26-24-62z" fill="#f4f6f8"/>
+    <path d="M142 170l-22 44 16 26 24-62z" fill="#f4f6f8"/>
+    <rect x="106" y="140" width="28" height="36" rx="12" fill="#e5b48d"/>
+    <ellipse cx="80" cy="116" rx="7" ry="10" fill="#eec4a0"/>
+    <ellipse cx="160" cy="116" rx="7" ry="10" fill="#eec4a0"/>
+    <ellipse cx="120" cy="112" rx="40" ry="46" fill="#eec4a0"/>
+    <path d="M79 106c-1-34 21-49 45-49 26 1 40 19 37 49-11-18-31-26-57-20-10 4-20 12-25 20z" fill="#3b2f2a"/>
+    <path d="M96 102q8-4 16 0M128 102q8-4 16 0" fill="none" stroke="#3b2f2a" stroke-width="3" stroke-linecap="round"/>
+    <rect x="92" y="107" width="24" height="18" rx="7" fill="none" stroke="#2d2a32" stroke-width="2.6"/>
+    <rect x="124" y="107" width="24" height="18" rx="7" fill="none" stroke="#2d2a32" stroke-width="2.6"/>
+    <path d="M116 115h8" stroke="#2d2a32" stroke-width="2.6"/>
+    <ellipse cx="104" cy="116" rx="3.6" ry="4.4" fill="#2d2a32"/>
+    <ellipse cx="136" cy="116" rx="3.6" ry="4.4" fill="#2d2a32"/>
+    <ellipse cx="95" cy="133" rx="7" ry="4" fill="#f29b8a" opacity=".3"/>
+    <ellipse cx="145" cy="133" rx="7" ry="4" fill="#f29b8a" opacity=".3"/>
+    <path d="M106 137q14 11 28 0" fill="none" stroke="#a9604b" stroke-width="3" stroke-linecap="round"/>
+    <path d="M100 172c-10 30-2 52 20 54 22-2 30-24 20-54" fill="none" stroke="#4b5a66" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="120" cy="230" r="8" fill="#c7d0d7" stroke="#4b5a66" stroke-width="3"/>
+    <rect x="152" y="196" width="32" height="11" rx="3" fill="#ff7a2f"/>
+  </g>
+</svg>

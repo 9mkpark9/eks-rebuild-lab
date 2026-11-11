@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  동물병원 예약 시스템 - 보안 (10.2장 vet01-security).
+  보안 그룹 체인 8개(각 계층은 바로 앞 계층의 보안 그룹에서 오는 트래픽만 받음)와 최소 권한 IAM 역할 3개.
+
+Parameters:
+  ClientName:
+    Type: String
+    Default: vet01
+  ArtifactBucket:
+    Type: String
+    Description: 배포 파일 버킷 (was/, web/, db/, loadgen/)
+  AllowedCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: >-
+      외부 ALB(HTTP 80)에 접속을 허용할 대역. 문서 5장은 부하 테스트 기간에 Locust EIP와 팀원 IP(/32)만 열라고 권장한다.
+      다른 사람에게 보여 줄 때는 0.0.0.0/0, 부하 테스트 때는 좁혀서 다시 배포한다.
+
+Resources:
+  # ── 보안 그룹 체인 (5장 표) ──
+  SgAlbExt:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ClientName}-sg-alb-ext"
+      GroupDescription: external ALB - HTTP 80
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: !Ref AllowedCidr, Description: viewers }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-sg-alb-ext" }]
+  SgWeb:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ClientName}-sg-web"
+      GroupDescription: WEB nginx - 80 from external ALB only
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, SourceSecurityGroupId: !Ref SgAlbExt }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-sg-web" }]
+  SgAlbInt:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ClientName}-sg-alb-int"
+      GroupDescription: internal ALB - 8080 from WEB only
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 8080, ToPort: 8080, SourceSecurityGroupId: !Ref SgWeb }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-sg-alb-int" }]
+  SgWas:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ClientName}-sg-was"
+      GroupDescription: WAS - 8080 from internal ALB only
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 8080, ToPort: 8080, SourceSecurityGroupId: !Ref SgAlbInt }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-sg-was" }]
+  SgOps:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ClientName}-sg-ops"
+      GroupDescription: ops EC2 - no inbound (Session Manager only)
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-sg-ops" }]
+  SgDb:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ClientName}-sg-db"
+      GroupDescription: RDS MySQL - 3306 from WAS and ops
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 3306, ToPort: 3306, SourceSecurityGroupId: !Ref SgWas }
+        - { IpProtocol: tcp, FromPort: 3306, ToPort: 3306, SourceSecurityGroupId: !Ref SgOps }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-sg-db" }]
+  SgCache:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ClientName}-sg-cache"
+      GroupDescription: ElastiCache - 6379 from WAS
+      VpcId: !ImportValue { "Fn::Sub": "${ClientName}-VpcId" }
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 6379, ToPort: 6379, SourceSecurityGroupId: !Ref SgWas }
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-sg-cache" }]
+  # sg-locust 는 부하 생성 VPC(vet01-loadgen)에 있다
+
+  # ── IAM 역할 (10.3장 최소 권한) ──
+  WebRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ClientName}-role-web"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{ Effect: Allow, Principal: { Service: ec2.amazonaws.com }, Action: sts:AssumeRole }]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: read-web-artifacts
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - { Effect: Allow, Action: s3:GetObject, Resource: !Sub "arn:aws:s3:::${ArtifactBucket}/web/*" }
+  WebProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: { InstanceProfileName: !Sub "${ClientName}-profile-web", Roles: [!Ref WebRole] }
+
+  WasRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ClientName}-role-was"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{ Effect: Allow, Principal: { Service: ec2.amazonaws.com }, Action: sts:AssumeRole }]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: was-artifacts-and-secrets   # 부록 E.4
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - { Sid: ReadWasArtifacts, Effect: Allow, Action: s3:GetObject, Resource: !Sub "arn:aws:s3:::${ArtifactBucket}/was/*" }
+              - Sid: ReadAppSecrets
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${ClientName}/db/app-*"
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${ClientName}/redis/auth-*"
+  WasProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: { InstanceProfileName: !Sub "${ClientName}-profile-was", Roles: [!Ref WasRole] }
+
+  OpsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ClientName}-role-ops"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{ Effect: Allow, Principal: { Service: ec2.amazonaws.com }, Action: sts:AssumeRole }]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: ops-db-init
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - { Effect: Allow, Action: rds:DescribeDBInstances, Resource: "*" }
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:rds!*"
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${ClientName}/db/app-*"
+              - { Effect: Allow, Action: s3:GetObject, Resource: !Sub "arn:aws:s3:::${ArtifactBucket}/db/*" }
+              - { Effect: Allow, Action: s3:ListBucket, Resource: !Sub "arn:aws:s3:::${ArtifactBucket}", Condition: { StringLike: { "s3:prefix": "db/*" } } }
+  OpsProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: { InstanceProfileName: !Sub "${ClientName}-profile-ops", Roles: [!Ref OpsRole] }
+
+  LoadgenRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ClientName}-role-loadgen"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{ Effect: Allow, Principal: { Service: ec2.amazonaws.com }, Action: sts:AssumeRole }]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: read-loadgen
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - { Effect: Allow, Action: s3:GetObject, Resource: !Sub "arn:aws:s3:::${ArtifactBucket}/loadgen/*" }
+  LoadgenProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: { InstanceProfileName: !Sub "${ClientName}-profile-loadgen", Roles: [!Ref LoadgenRole] }
+
+Outputs:
+  SgAlbExt: { Value: !Ref SgAlbExt, Export: { Name: !Sub "${ClientName}-SgAlbExt" } }
+  SgWeb: { Value: !Ref SgWeb, Export: { Name: !Sub "${ClientName}-SgWeb" } }
+  SgAlbInt: { Value: !Ref SgAlbInt, Export: { Name: !Sub "${ClientName}-SgAlbInt" } }
+  SgWas: { Value: !Ref SgWas, Export: { Name: !Sub "${ClientName}-SgWas" } }
+  SgOps: { Value: !Ref SgOps, Export: { Name: !Sub "${ClientName}-SgOps" } }
+  SgDb: { Value: !Ref SgDb, Export: { Name: !Sub "${ClientName}-SgDb" } }
+  SgCache: { Value: !Ref SgCache, Export: { Name: !Sub "${ClientName}-SgCache" } }
+  WebProfile: { Value: !Ref WebProfile, Export: { Name: !Sub "${ClientName}-WebProfile" } }
+  WasProfile: { Value: !Ref WasProfile, Export: { Name: !Sub "${ClientName}-WasProfile" } }
+  OpsProfile: { Value: !Ref OpsProfile, Export: { Name: !Sub "${ClientName}-OpsProfile" } }
+  LoadgenProfile: { Value: !Ref LoadgenProfile, Export: { Name: !Sub "${ClientName}-LoadgenProfile" } }

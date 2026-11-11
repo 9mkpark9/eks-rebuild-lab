@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1f5d45">
+<meta property="og:site_name" content="보듬 동물병원">
+<meta property="og:type" content="website">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/site.css">
+<link rel="stylesheet" href="/assets/css/fonts.css">
+<link rel="stylesheet" href="/assets/css/board-shell.css">
+<link rel="stylesheet" href="/assets/css/board.css">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="stylesheet" href="/assets/css/board-pages.css">
+<title>공지사항 | 보듬 동물병원</title>
+<meta name="description" content="보듬 동물병원의 휴진 안내, 예방접종 할인 등 새 소식을 알려 드립니다.">
+</head>
+<body class="board board-page">
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div class="topbar">
+  <div class="container topbar__inner">
+    <p class="topbar__status" data-clinic-status
+       data-open="09:00" data-close="18:00"
+       data-lunch-start="13:00" data-lunch-end="14:00"
+       data-closed-days="0">
+      <span class="dot" aria-hidden="true"></span><span data-clinic-status-text>월–토 09:00–18:00</span>
+    </p>
+    <ul class="topbar__info">
+      <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>대표전화 <a href="tel:0212345678">02-1234-5678</a></li>
+      <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#clock"/></svg>월–토 09:00–18:00 · 점심 13:00–14:00 · 일요일 휴진</li>
+    </ul>
+  </div>
+</div>
+<header class="header" data-header>
+  <div class="container header__inner">
+    <a class="brand" href="/" aria-label="보듬 동물병원 홈">
+      <svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
+        <rect width="40" height="40" rx="12" fill="#0f7a64"/>
+        <ellipse cx="20" cy="25.5" rx="7.6" ry="6.3" fill="#fff"/>
+        <ellipse cx="11.2" cy="18.2" rx="2.9" ry="3.6" transform="rotate(-22 11.2 18.2)" fill="#fff"/>
+        <ellipse cx="16.4" cy="12.4" rx="2.9" ry="3.8" transform="rotate(-6 16.4 12.4)" fill="#fff"/>
+        <ellipse cx="23.6" cy="12.4" rx="2.9" ry="3.8" transform="rotate(6 23.6 12.4)" fill="#fff"/>
+        <ellipse cx="28.8" cy="18.2" rx="2.9" ry="3.6" transform="rotate(22 28.8 18.2)" fill="#fff"/>
+        <path d="M18.7 21.8h2.6v2.5h2.5v2.6h-2.5v2.5h-2.6v-2.5h-2.5v-2.6h2.5z" fill="#ff7a2f"/>
+      </svg>
+      <span class="brand__text"><span class="brand__name">보듬 동물병원</span><span class="brand__en">BODEUM ANIMAL HOSPITAL</span></span>
+    </a>
+    <nav class="gnb" aria-label="주 메뉴">
+      <ul>
+        <li><a href="/about" data-nav="about">병원 소개</a></li>
+        <li><a href="/doctors" data-nav="doctors">의료진</a></li>
+        <li><a href="/services" data-nav="services">진료 안내</a></li>
+        <li><a href="/notices" data-nav="notices" aria-current="page">공지사항</a></li>
+      </ul>
+    </nav>
+    <div class="header__actions">
+      <a class="header__link" href="/app/reservations"><svg class="icon icon--sm" aria-hidden="true"><use href="/assets/img/icons.svg#user"/></svg>내 예약</a>
+      <a class="btn btn--accent btn--sm header__cta" href="/app/reserve">온라인 예약</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-toggle>
+        <svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#menu"/></svg>
+        <span class="sr-only">메뉴 열기</span>
+      </button>
+    </div>
+  </div>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="모바일 메뉴" hidden>
+    <ul>
+      <li><a href="/about" data-nav="about">병원 소개<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/doctors" data-nav="doctors">의료진<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/services" data-nav="services">진료 안내<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/notices" data-nav="notices" aria-current="page">공지사항<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/app/reservations">내 예약 조회<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+    </ul>
+    <div class="mobile-menu__cta">
+      <a class="btn btn--outline" href="tel:0212345678"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화 문의</a>
+      <a class="btn btn--accent" href="/app/reserve">온라인 예약</a>
+    </div>
+  </nav>
+</header>
+
+<main id="main" class="bd">
+  <section class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="현재 위치">
+        <a href="/">홈</a><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg><a href="/notices">공지사항</a>
+      </nav>
+      <h1 class="page-hero__title">공지사항</h1>
+      <p class="page-hero__desc">휴진 일정, 예방접종 할인 예약 오픈 같은 병원 소식을 가장 먼저 알려 드립니다.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:48px">
+    <div class="container">
+      <!-- 목록 -->
+      <div data-board-view="list">
+        <div class="board-tools">
+          <div class="board-filter" role="group" aria-label="분류">
+            <button class="chip" type="button" aria-pressed="true" data-filter="">전체</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter="NOTICE">공지</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter="EVENT">이벤트</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter="CLOSED">휴진</button>
+          </div>
+          <p class="board-count" data-board-count></p>
+        </div>
+        <div class="board" data-board>
+          <div class="board__row board__row--head" aria-hidden="true">
+            <span class="board__num">번호</span><span style="text-align:center">분류</span><span>제목</span><span class="board__date">작성일</span>
+          </div>
+          <div data-board-body>
+            <div class="board__row"><span></span><span></span><div class="skeleton" style="width:70%"></div><span></span></div>
+            <div class="board__row"><span></span><span></span><div class="skeleton" style="width:55%"></div><span></span></div>
+            <div class="board__row"><span></span><span></span><div class="skeleton" style="width:62%"></div><span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 상세 -->
+      <article class="article" data-board-view="detail" hidden>
+        <header class="article__head">
+          <span class="badge" data-article-category></span>
+          <h2 class="article__title" data-article-title></h2>
+          <p class="article__meta"><span data-article-date></span><span>보듬 동물병원</span></p>
+        </header>
+        <div class="article__body" data-article-body></div>
+        <div class="article__foot"><a class="btn btn--outline" href="/notices"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#list"/></svg>목록으로</a></div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<aside class="quick" aria-label="빠른 메뉴">
+  <a class="quick__item quick__item--accent" href="/app/reserve"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar-check"/></svg>온라인<br>예약</a>
+  <a class="quick__item" href="tel:0212345678"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화<br>상담</a>
+  <a class="quick__item" href="/about#location"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#pin"/></svg>오시는<br>길</a>
+  <a class="quick__item" href="/app/reservations"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#list"/></svg>내 예약</a>
+  <button class="quick__top" type="button" data-scroll-top><svg class="icon icon--sm" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-up"/></svg>TOP</button>
+</aside>
+
+<div class="mobile-cta">
+  <a class="mobile-cta__call" href="tel:0212345678"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화 문의</a>
+  <a class="mobile-cta__book" href="/app/reserve"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar-check"/></svg>온라인 예약</a>
+</div>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div>
+      <a class="brand" href="/" aria-label="보듬 동물병원 홈">
+        <svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
+          <rect width="40" height="40" rx="12" fill="#1f9a7f"/>
+          <ellipse cx="20" cy="25.5" rx="7.6" ry="6.3" fill="#fff"/>
+          <ellipse cx="11.2" cy="18.2" rx="2.9" ry="3.6" transform="rotate(-22 11.2 18.2)" fill="#fff"/>
+          <ellipse cx="16.4" cy="12.4" rx="2.9" ry="3.8" transform="rotate(-6 16.4 12.4)" fill="#fff"/>
+          <ellipse cx="23.6" cy="12.4" rx="2.9" ry="3.8" transform="rotate(6 23.6 12.4)" fill="#fff"/>
+          <ellipse cx="28.8" cy="18.2" rx="2.9" ry="3.6" transform="rotate(22 28.8 18.2)" fill="#fff"/>
+          <path d="M18.7 21.8h2.6v2.5h2.5v2.6h-2.5v2.5h-2.6v-2.5h-2.5v-2.6h2.5z" fill="#ff7a2f"/>
+        </svg>
+        <span class="brand__text"><span class="brand__name">보듬 동물병원</span><span class="brand__en">BODEUM ANIMAL HOSPITAL</span></span>
+      </a>
+      <p class="footer__slogan">우리 아이의 평생 주치의, 오늘도 보듬겠습니다.</p>
+    </div>
+    <div class="footer__info">
+      <p><strong>보듬 동물병원</strong> · 대표 수의사 김하늘 · 사업자등록번호 000-00-00000</p>
+      <p>서울특별시 가상구 보듬로 123, 1층</p>
+      <p>대표전화 02-1234-5678 · 월–토 09:00–18:00 · 점심 13:00–14:00 · 일요일 휴진</p>
+    </div>
+    <ul class="footer__links">
+      <li><a href="/about">병원 소개</a></li>
+      <li><a href="/doctors">의료진</a></li>
+      <li><a href="/services">진료 안내</a></li>
+      <li><a href="/notices">공지사항</a></li>
+      <li><a class="is-strong" href="/services#privacy">개인정보 처리방침</a></li>
+    </ul>
+  </div>
+  <div class="container footer__bottom">
+    <p>© 2026 BODEUM ANIMAL HOSPITAL. All rights reserved.</p>
+    <p>이 사이트는 부하분산 시스템 과제를 위한 가상 동물병원입니다. 병원명·주소·전화번호·의료진은 실제와 관계없습니다.</p>
+  </div>
+</footer>
+<script src="/assets/js/site.js" defer></script>
+</body>
+</html>

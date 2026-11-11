@@ -1,0 +1,36 @@
+# 접속 정보와 비밀은 환경 변수로 받는다 (부록 E.1 start.sh):
+#   SPRING_DATASOURCE_URL / _USERNAME / _PASSWORD, SPRING_DATA_REDIS_HOST / _PASSWORD
+spring:
+  application:
+    name: vet-api
+  datasource:
+    url: jdbc:mysql://localhost:3306/vet?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+    hikari:
+      maximum-pool-size: 10        # 인스턴스당. WAS 최대 4대 x 10 = 40 (8장)
+      minimum-idle: 10
+      connection-timeout: 3000     # 기본 30000ms. 연결 부족을 3초 안에 오류로 드러낸다
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}   # 환경 변수가 없으면 6379 (없으면 시작 실패)
+      ssl:
+        enabled: true              # 전송 중 암호화 (AUTH 토큰을 쓰려면 필요)
+      timeout: 2s
+  session:
+    timeout: 30m                   # 요청마다 연장 (6장)
+
+server:
+  port: 8080
+  shutdown: graceful
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: SESSION
+        http-only: true
+        same-site: lax
+
+
+logging:
+  level:
+    root: INFO

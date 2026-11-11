@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 500" role="img" aria-labelledby="t">
+  <title id="t">진료를 기다리는 강아지와 고양이 일러스트</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d6efe6"/>
+      <stop offset="1" stop-color="#eaf6f1"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#17263a" flood-opacity=".12"/>
+    </filter>
+  </defs>
+
+  <!-- 배경 -->
+  <circle cx="290" cy="262" r="205" fill="url(#bg)"/>
+  <circle cx="470" cy="112" r="46" fill="#fff1e6"/>
+  <circle cx="96" cy="330" r="26" fill="#fff1e6"/>
+  <g fill="#0f7a64" opacity=".14">
+    <circle cx="140" cy="118" r="4"/><circle cx="160" cy="104" r="4"/><circle cx="180" cy="118" r="4"/>
+    <circle cx="140" cy="138" r="4"/><circle cx="160" cy="124" r="4"/><circle cx="180" cy="138" r="4"/>
+  </g>
+
+  <!-- 바닥 그림자 -->
+  <ellipse cx="300" cy="456" rx="178" ry="14" fill="#0f7a64" opacity=".12"/>
+
+  <!-- ===== 강아지 ===== -->
+  <g>
+    <path d="M168 452c-10-70 8-132 62-137 54 5 72 67 62 137z" fill="#efb05a"/>
+    <path d="M206 452c-5-50 4-98 24-103 20 5 29 53 24 103z" fill="#fbe1b6"/>
+    <rect x="190" y="398" width="30" height="58" rx="15" fill="#efb05a"/>
+    <rect x="240" y="398" width="30" height="58" rx="15" fill="#efb05a"/>
+    <ellipse cx="205" cy="452" rx="18" ry="9" fill="#fbe1b6"/>
+    <ellipse cx="255" cy="452" rx="18" ry="9" fill="#fbe1b6"/>
+    <path d="M211 452v-8M199 452v-6M249 452v-8M261 452v-6" stroke="#d99a4c" stroke-width="2.4" stroke-linecap="round"/>
+
+    <!-- 목줄과 진료 태그 -->
+    <path d="M176 314q54 26 108 0l2 16q-56 28-112 0z" fill="#0f7a64"/>
+    <circle cx="230" cy="350" r="13" fill="#ff7a2f"/>
+    <path d="M228 343h4v5h5v4h-5v5h-4v-5h-5v-4h5z" fill="#fff"/>
+
+    <!-- 머리 -->
+    <circle cx="230" cy="238" r="80" fill="#f4c27a"/>
+    <ellipse cx="230" cy="196" rx="15" ry="26" fill="#f9d79f"/>
+    <path d="M164 196c-28 8-38 74-14 106 18 4 28-44 30-86z" fill="#d68b3b"/>
+    <path d="M296 196c28 8 38 74 14 106-18 4-28-44-30-86z" fill="#d68b3b"/>
+    <ellipse cx="230" cy="272" rx="42" ry="31" fill="#fde8c8"/>
+    <ellipse cx="186" cy="262" rx="11" ry="6.5" fill="#ff9e7a" opacity=".38"/>
+    <ellipse cx="274" cy="262" rx="11" ry="6.5" fill="#ff9e7a" opacity=".38"/>
+    <circle cx="203" cy="228" r="8.5" fill="#2c211b"/>
+    <circle cx="257" cy="228" r="8.5" fill="#2c211b"/>
+    <circle cx="206" cy="225" r="2.8" fill="#fff"/>
+    <circle cx="260" cy="225" r="2.8" fill="#fff"/>
+    <ellipse cx="230" cy="288" rx="8" ry="9" fill="#ff8f8f"/>
+    <ellipse cx="230" cy="257" rx="14" ry="9.5" fill="#3a2a22"/>
+    <ellipse cx="225" cy="254" rx="4" ry="2.2" fill="#fff" opacity=".45"/>
+    <path d="M230 266v9m0 0c-5 8-15 8-20 2m20-2c5 8 15 8 20 2" fill="none" stroke="#3a2a22" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- ===== 고양이 ===== -->
+  <g>
+    <path d="M422 444c46-8 50-66 22-84" fill="none" stroke="#8f9aa6" stroke-width="15" stroke-linecap="round"/>
+    <path d="M330 452c-8-55 10-92 45-96 35 4 53 41 45 96z" fill="#a9b3bd"/>
+    <path d="M355 452c-3-40 7-66 20-68 13 2 23 28 20 68z" fill="#eef1f4"/>
+    <ellipse cx="360" cy="450" rx="14" ry="8" fill="#eef1f4"/>
+    <ellipse cx="390" cy="450" rx="14" ry="8" fill="#eef1f4"/>
+
+    <path d="M330 302l-3-54 40 30z" fill="#b3bcc5"/>
+    <path d="M420 302l3-54-40 30z" fill="#b3bcc5"/>
+    <path d="M336 292l-1-30 21 17z" fill="#f5b8b8"/>
+    <path d="M414 292l1-30-21 17z" fill="#f5b8b8"/>
+    <ellipse cx="375" cy="316" rx="54" ry="47" fill="#b3bcc5"/>
+    <path d="M375 274v13M364 277l2.5 11M386 277l-2.5 11" stroke="#8f9aa6" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M323 318h12M415 318h12" stroke="#8f9aa6" stroke-width="3.5" stroke-linecap="round"/>
+    <ellipse cx="365" cy="335" rx="13" ry="10" fill="#eef1f4"/>
+    <ellipse cx="385" cy="335" rx="13" ry="10" fill="#eef1f4"/>
+    <ellipse cx="344" cy="330" rx="7" ry="4" fill="#ff9e9e" opacity=".45"/>
+    <ellipse cx="406" cy="330" rx="7" ry="4" fill="#ff9e9e" opacity=".45"/>
+    <ellipse cx="357" cy="312" rx="6.5" ry="8" fill="#2c3a46"/>
+    <ellipse cx="393" cy="312" rx="6.5" ry="8" fill="#2c3a46"/>
+    <circle cx="359.5" cy="309" r="2.2" fill="#fff"/>
+    <circle cx="395.5" cy="309" r="2.2" fill="#fff"/>
+    <path d="M369.5 326h11l-5.5 6.5z" fill="#f08a9a"/>
+    <path d="M375 332v3m0 0q-4 5-8 1m8-1q4 5 8 1" fill="none" stroke="#5b6670" stroke-width="2" stroke-linecap="round"/>
+    <path d="M350 334l-24-3M350 339l-23 4M400 334l24-3M400 339l23 4" stroke="#8f9aa6" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+
+  <!-- 장식: 하트, 의료 배지, 반짝임 -->
+  <path d="M118 210s-22-13.5-22-30a12.5 12.5 0 0 1 22-7.6 12.5 12.5 0 0 1 22 7.6c0 16.5-22 30-22 30z" fill="#ff7a2f"/>
+  <g filter="url(#soft)">
+    <circle cx="452" cy="210" r="30" fill="#fff"/>
+  </g>
+  <path d="M446 196h12v8h8v12h-8v8h-12v-8h-8v-12h8z" fill="#0f7a64"/>
+  <path d="M500 300c1.2 8 5.4 12.2 13.4 13.4-8 1.2-12.2 5.4-13.4 13.4-1.2-8-5.4-12.2-13.4-13.4 8-1.2 12.2-5.4 13.4-13.4z" fill="#ffb37f"/>
+  <path d="M330 92c.9 6 4 9.1 10 10-6 .9-9.1 4-10 10-.9-6-4-9.1-10-10 6-.9 9.1-4 10-10z" fill="#0f7a64" opacity=".5"/>
+  <g fill="#0f7a64" opacity=".18">
+    <ellipse cx="505" cy="412" rx="9" ry="7.5"/>
+    <ellipse cx="493" cy="398" rx="3.2" ry="4"/><ellipse cx="502" cy="392" rx="3.2" ry="4"/>
+    <ellipse cx="511" cy="392" rx="3.2" ry="4"/><ellipse cx="519" cy="398" rx="3.2" ry="4"/>
+  </g>
+</svg>

@@ -1,0 +1,33 @@
+// 예약 API WAS (문서 3.2장: Java 21 + Spring Boot 4.1)
+// ./gradlew bootJar -Pversion=1.0.0  →  build/libs/vet-api-1.0.0.jar
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'kr.bodeum'
+version = (project.version == 'unspecified') ? '1.0.0' : project.version   // -Pversion=x.y.z 로 바꾼다
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'                  // JdbcTemplate + HikariCP
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'            // 로그인 시도 제한 카운터
+    implementation 'org.springframework.boot:spring-boot-starter-session-data-redis'    // 세션 = ElastiCache
+    implementation 'org.springframework.security:spring-security-crypto'                // BCrypt 만 사용
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('bootJar') {
+    archiveFileName = "vet-api-${project.version}.jar"
+}
+tasks.named('jar') { enabled = false }
+tasks.named('test') { useJUnitPlatform() }

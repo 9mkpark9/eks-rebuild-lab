@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  동물병원 예약 시스템 - 부하 생성 (10.2장 vet01-loadgen).
+  같은 리전의 별도 VPC(10.20.0.0/16), 퍼블릭 서브넷, Locust EC2(m7i.large, 버스트형 아님)와 탄력적 IP.
+  실제 사용자와 같은 경로(외부 ALB 공개 주소)로만 요청한다 (5장).
+
+Parameters:
+  ClientName: { Type: String, Default: vet01 }
+  ArtifactBucket: { Type: String }
+  InstanceType: { Type: String, Default: m7i.large }
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-loadgen-vpc" }]
+  Igw:
+    Type: AWS::EC2::InternetGateway
+  IgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: { VpcId: !Ref Vpc, InternetGatewayId: !Ref Igw }
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      AvailabilityZone: !Sub "${AWS::Region}a"
+      CidrBlock: 10.20.0.0/24
+      MapPublicIpOnLaunch: true   # 부팅 중 사용자 데이터(pip install)가 인터넷에 닿도록. EIP는 부팅 뒤에 붙는다
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-loadgen-public" }]
+  Rt:
+    Type: AWS::EC2::RouteTable
+    Properties: { VpcId: !Ref Vpc }
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: IgwAttach
+    Properties: { RouteTableId: !Ref Rt, DestinationCidrBlock: 0.0.0.0/0, GatewayId: !Ref Igw }
+  RtAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref Subnet, RouteTableId: !Ref Rt }
+
+  SgLocust:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${ClientName}-sg-locust"
+      GroupDescription: Locust - no inbound (Session Manager only)
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-sg-locust" }]
+
+  Locust:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref Subnet
+      SecurityGroupIds: [!Ref SgLocust]
+      IamInstanceProfile: !ImportValue { "Fn::Sub": "${ClientName}-LoadgenProfile" }
+      MetadataOptions: { HttpTokens: required }
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          dnf install -y python3-pip
+          pip3 install "locust>=2.30,<3"
+          mkdir -p /opt/loadtest/results
+          aws s3 cp "s3://${ArtifactBucket}/loadgen/locustfile.py" /opt/loadtest/locustfile.py --region "${AWS::Region}"
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-locust" }]
+  LocustEip:
+    Type: AWS::EC2::EIP
+    DependsOn: IgwAttach
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref Locust
+      Tags: [{ Key: Name, Value: !Sub "${ClientName}-locust-eip" }]
+
+Outputs:
+  LocustInstanceId: { Value: !Ref Locust }
+  LocustPublicIp: { Value: !Ref LocustEip, Description: 외부 ALB 보안 그룹을 좁힐 때 이 IP/32 를 넣는다 }
