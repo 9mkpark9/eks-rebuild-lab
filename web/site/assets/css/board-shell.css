@@ -1,0 +1,71 @@
+/* ==========================================================================
+   「병원 게시판」 공통 틀 (body.board)
+   색·활자 토큰과, 소개 페이지와 예약 앱이 함께 쓰는 머리말·바닥글·딱지.
+   소개 페이지는 head.html 에서, 예약 앱은 app/src/main.tsx 에서 불러온다.
+   ========================================================================== */
+
+body.board {
+  --felt: #1f5d45;
+  --felt-deep: #143d2e;
+  --ink: #161616;
+  --ink-soft: #3d3d3a;       /* 종이 위 보조 글자: 세 종이 모두에서 7:1 이상 */
+  --pink: #f4b8c5;
+  --manila: #ecd98f;
+  --paper: #ecece6;
+  --red: #b3261e;
+  --chalk: #f4f6f1;          /* 판 위에 직접 쓰는 글자 */
+  --hatch: repeating-linear-gradient(135deg, transparent 0 5px, rgba(22, 22, 22, .17) 5px 6px);
+  --paper-shadow: 0 1px 0 rgba(0, 0, 0, .2), 0 16px 22px -10px rgba(0, 0, 0, .5);
+  --f-poster: "Black Han Sans", "Pretendard Variable", Pretendard, sans-serif;
+  --f-sign: "Do Hyeon", "Pretendard Variable", Pretendard, sans-serif;
+  --f-serif: "Nanum Myeongjo", "Noto Serif KR", serif;
+  --f-mono: "Nanum Gothic Coding", ui-monospace, Consolas, monospace;
+  border-top: 0;             /* site.css 의 공지 표(.board) 윗줄이 body 에 걸리지 않게 */
+  --step: steps(2, end);     /* 움직임은 부드럽지 않고 두 단계로 끊어진다 */
+  background: var(--felt-deep);   /* 본문 아래로 남는 여백(좁은 화면의 고정 바 자리)은 바닥 색을 잇는다 */
+}
+
+html:has(body.board) { scrollbar-color: #8fb3a3 var(--felt-deep); accent-color: #161616; }
+.board ::selection { background: var(--ink); color: var(--pink); }
+.board :focus-visible { outline: 3px solid var(--chalk); outline-offset: 3px; border-radius: 2px; }
+.board .scrap :focus-visible, .board .mobile-menu :focus-visible { outline-color: var(--ink); }
+
+/* ---------- 딱지 ---------- */
+.board .badge { border-radius: 0; background: var(--ink); color: var(--paper); font-family: var(--f-mono); font-weight: 700; }
+.board .badge--accent { background: var(--red); color: #fff; }
+.board .badge--danger { background: none; color: var(--red); box-shadow: inset 0 0 0 2px var(--red); }
+
+/* ---------- 공통 머리·바닥을 판의 일부로 ---------- */
+.board .topbar { background: var(--felt-deep); }
+.board .topbar__status[data-state="open"] .dot { background: var(--pink); box-shadow: none; }
+.board .header { background: var(--felt); border-bottom: 2px solid rgba(244, 246, 241, .28); backdrop-filter: none; }
+.board .header.is-scrolled { border-bottom-color: rgba(244, 246, 241, .28); box-shadow: 0 8px 14px -8px rgba(0, 0, 0, .5); }
+.board .brand { padding: 6px 14px 6px 8px; background: var(--paper); box-shadow: var(--paper-shadow); transform: rotate(-1.2deg); }
+.board .brand__name { font-family: var(--f-sign); font-weight: 400; font-size: 24px; letter-spacing: 0; color: var(--ink); }
+.board .brand__en { font-family: var(--f-mono); font-size: 11px; letter-spacing: .04em; color: var(--ink-soft); }
+.board .gnb ul { gap: 10px; }
+.board .gnb a { padding: 8px 16px; border-radius: 0; background: var(--manila); color: var(--ink); font-family: var(--f-sign); font-weight: 400; font-size: 19px; box-shadow: 0 1px 0 rgba(0, 0, 0, .2), 0 8px 10px -6px rgba(0, 0, 0, .5); transition: transform .12s var(--step); }
+.board .gnb li:nth-child(odd) a { transform: rotate(-1.5deg); }
+.board .gnb li:nth-child(even) a { transform: rotate(1.2deg); }
+.board .gnb a:hover { background: var(--manila); color: var(--ink); transform: rotate(0deg) translateY(-3px); }
+.board .gnb a[aria-current="page"]::after { display: none; }
+.board .header__link { padding: 8px 14px; background: var(--paper); color: var(--ink); font-family: var(--f-sign); font-size: 18px; box-shadow: 0 1px 0 rgba(0, 0, 0, .2), 0 8px 10px -6px rgba(0, 0, 0, .5); transform: rotate(1deg); transition: transform .12s var(--step); }
+.board .header__link:hover { color: var(--ink); transform: rotate(0deg) translateY(-3px); }
+.board .btn--accent { border-radius: 0; background: var(--pink); color: var(--ink); font-family: var(--f-sign); font-weight: 400; font-size: 19px; box-shadow: 0 1px 0 rgba(0, 0, 0, .2), 0 8px 10px -6px rgba(0, 0, 0, .5); }
+.board .btn--accent:not(:disabled):hover { background: var(--pink); transform: translateY(-3px) rotate(-1.5deg); }
+.board .btn--outline { border-radius: 0; border: 3px solid var(--ink); font-family: var(--f-sign); font-weight: 400; }
+.board .menu-toggle { border-radius: 0; background: var(--paper); color: var(--ink); }
+.board .mobile-menu { background: var(--paper); border-top: 2px dashed var(--ink); }
+.board .mobile-menu a { font-family: var(--f-sign); font-weight: 400; font-size: 21px; color: var(--ink); }
+.board .mobile-menu li + li { border-top: 1px dashed var(--ink); }
+.board .quick { display: none; }
+.board .footer { background: var(--felt-deep); border-top: 2px solid rgba(244, 246, 241, .28); }
+.board .footer .brand { padding: 0; background: none; box-shadow: none; transform: none; }
+.board .footer .brand__name { color: #fff; }
+.board .footer .brand__en { color: #b9dccd; }
+.board .footer__bottom { color: rgba(255, 255, 255, .62); }
+.board .footer__slogan { color: rgba(255, 255, 255, .72); }
+
+@media (max-width: 640px) {
+  .board .brand__name { font-size: 20px; }
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<!-- @include head -->
+<title>온라인 예약 안내 | {{name}}</title>
+<meta name="robots" content="noindex">
+<style>
+  .preview-card { max-width: 760px; margin: 0 auto; padding: 48px 40px; border-radius: var(--radius-xl); background: #fff; box-shadow: var(--shadow-lg); text-align: center; }
+  .preview-card__icon { display: grid; place-items: center; width: 72px; height: 72px; margin: 0 auto 20px; border-radius: 50%; background: var(--c-accent-soft); color: var(--c-accent); }
+  .preview-card__icon .icon { width: 34px; height: 34px; }
+  .preview-card h2 { font-size: clamp(22px, 3vw, 28px); font-weight: 800; }
+  .preview-card p { margin-top: 12px; color: var(--c-muted); }
+  .preview-card__list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 28px 0; text-align: left; }
+  .preview-card__list li { padding: 16px; border-radius: var(--radius); background: var(--c-bg-soft); font-size: 14px; color: var(--c-muted); }
+  .preview-card__list strong { display: block; margin-bottom: 4px; font-size: 15px; color: var(--c-navy); }
+  .preview-card__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  @media (max-width: 640px) { .preview-card { padding: 36px 20px; } .preview-card__list { grid-template-columns: 1fr; } .preview-card__actions .btn { width: 100%; } }
+</style>
+</head>
+<body>
+<!-- @include header -->
+
+<main id="main">
+  <section class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="현재 위치">
+        <a href="/">홈</a><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg><span>온라인 예약</span>
+      </nav>
+      <h1 class="page-hero__title">온라인 예약</h1>
+      <p class="page-hero__desc">반려동물을 고르고, 진료 항목과 30분 진료 시간을 선택해 예약합니다.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:24px">
+    <div class="container">
+      <div class="preview-card">
+        <span class="preview-card__icon"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#info"/></svg></span>
+        <h2>지금은 소개 페이지 미리보기입니다</h2>
+        <p>이 주소는 병원 소개 페이지만 올린 정적 미리보기라, 로그인·온라인 예약·직원 화면은 동작하지 않습니다. 이 화면들은 예약 서버(WAS)와 함께 배포됩니다.</p>
+        <ul class="preview-card__list">
+          <li><strong>보호자</strong>온라인 예약, 내 예약 변경·취소, 반려동물 관리</li>
+          <li><strong>간호사 전용</strong>전체 예약 현황·승인, 공지 등록</li>
+          <li><strong>원장 전용</strong>내 진료 일정, 진료 시간 열기·닫기, 병원 현황</li>
+        </ul>
+        <div class="preview-card__actions">
+          <a class="btn btn--accent" href="tel:{{phoneTel}}"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화 예약 {{phone}}</a>
+          <a class="btn btn--outline" href="/services#rules">예약 규칙 보기</a>
+          <a class="btn btn--ghost" href="/">홈으로</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- @include footer -->
+</body>
+</html>

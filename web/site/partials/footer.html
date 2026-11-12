@@ -1,0 +1,49 @@
+<aside class="quick" aria-label="빠른 메뉴">
+  <a class="quick__item quick__item--accent" href="/app/reserve"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar-check"/></svg>온라인<br>예약</a>
+  <a class="quick__item" href="tel:{{phoneTel}}"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화<br>상담</a>
+  <a class="quick__item" href="/about#location"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#pin"/></svg>오시는<br>길</a>
+  <a class="quick__item" href="/app/reservations"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#list"/></svg>내 예약</a>
+  <button class="quick__top" type="button" data-scroll-top><svg class="icon icon--sm" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-up"/></svg>TOP</button>
+</aside>
+
+<div class="mobile-cta">
+  <a class="mobile-cta__call" href="tel:{{phoneTel}}"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화 문의</a>
+  <a class="mobile-cta__book" href="/app/reserve"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#calendar-check"/></svg>온라인 예약</a>
+</div>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div>
+      <a class="brand" href="/" aria-label="{{name}} 홈">
+        <svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
+          <rect width="40" height="40" rx="12" fill="#1f9a7f"/>
+          <ellipse cx="20" cy="25.5" rx="7.6" ry="6.3" fill="#fff"/>
+          <ellipse cx="11.2" cy="18.2" rx="2.9" ry="3.6" transform="rotate(-22 11.2 18.2)" fill="#fff"/>
+          <ellipse cx="16.4" cy="12.4" rx="2.9" ry="3.8" transform="rotate(-6 16.4 12.4)" fill="#fff"/>
+          <ellipse cx="23.6" cy="12.4" rx="2.9" ry="3.8" transform="rotate(6 23.6 12.4)" fill="#fff"/>
+          <ellipse cx="28.8" cy="18.2" rx="2.9" ry="3.6" transform="rotate(22 28.8 18.2)" fill="#fff"/>
+          <path d="M18.7 21.8h2.6v2.5h2.5v2.6h-2.5v2.5h-2.6v-2.5h-2.5v-2.6h2.5z" fill="#ff7a2f"/>
+        </svg>
+        <span class="brand__text"><span class="brand__name">{{name}}</span><span class="brand__en">{{nameEn}}</span></span>
+      </a>
+      <p class="footer__slogan">{{slogan}}, 오늘도 보듬겠습니다.</p>
+    </div>
+    <div class="footer__info">
+      <p><strong>{{name}}</strong> · 대표 수의사 {{ceo}} · 사업자등록번호 {{bizNo}}</p>
+      <p>{{address}}</p>
+      <p>대표전화 {{phone}} · {{hours.label}} · {{hours.lunchLabel}} · {{hours.closedLabel}}</p>
+    </div>
+    <ul class="footer__links">
+      <li><a href="/about">병원 소개</a></li>
+      <li><a href="/doctors">의료진</a></li>
+      <li><a href="/services">진료 안내</a></li>
+      <li><a href="/notices">공지사항</a></li>
+      <li><a class="is-strong" href="/services#privacy">개인정보 처리방침</a></li>
+    </ul>
+  </div>
+  <div class="container footer__bottom">
+    <p>© {{year}} {{nameEn}}. All rights reserved.</p>
+    <p>이 사이트는 부하분산 시스템 과제를 위한 가상 동물병원입니다. 병원명·주소·전화번호·의료진은 실제와 관계없습니다.</p>
+  </div>
+</footer>
+<script src="/assets/js/site.js" defer></script>

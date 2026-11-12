@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<!-- @include head -->
+<title>{{name}} | {{slogan}}</title>
+<meta name="description" content="{{name}} — 수의사 3인이 30분 1:1로 진료합니다. 일반 진료·예방접종·건강검진을 진료 시간 밖에도 온라인으로 예약하세요. {{hours.label}}, {{hours.closedLabel}}.">
+</head>
+<body class="board">
+<!-- @include header -->
+
+<main id="main" class="bd">
+  <!-- 첫 화면: 예약권과 오늘의 진료 시간 -->
+  <section class="bd-top" aria-labelledby="ticket-title">
+    <div class="container bd-top__grid">
+      <div class="lift bd-top__ticket" data-ticket>
+        <article class="scrap ticket">
+          <div class="ticket__main">
+            <h1 class="ticket__title" id="ticket-title">한 시간대에<br>한 아이만.</h1>
+            <p class="ticket__lead">{{name}}은 예약한 30분 동안 한 아이만 봅니다. 기다림 없이, 서두름 없이. 진료 시간 밖에도 휴대폰으로 예약하고 변경하세요.</p>
+            <div class="ticket__actions">
+              <a class="bd-btn bd-btn--ink" href="/app/reserve">온라인 예약<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+              <a class="bd-btn bd-btn--line" href="tel:{{phoneTel}}"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>{{phone}}</a>
+            </div>
+          </div>
+          <dl class="ticket__stub">
+            <div><dt>진료 예약권</dt><dd>1회 30분</dd></div>
+            <div><dt>예약 가능</dt><dd>{{bookingDays}}일 앞까지</dd></div>
+            <div><dt>수의사</dt><dd>3명</dd></div>
+          </dl>
+        </article>
+      </div>
+
+      <p class="stamp" aria-label="{{hours.closedLabel}}">일요일<br>휴진</p>
+
+      <div class="lift bd-top__receipt">
+      <aside class="scrap receipt" aria-labelledby="receipt-title" data-receipt
+             data-open="{{hours.open}}" data-close="{{hours.close}}"
+             data-lunch-start="{{hours.lunchStart}}" data-lunch-end="{{hours.lunchEnd}}"
+             data-closed-days="{{hours.closedDays}}" data-slot="{{slotMinutes}}">
+        <h2 class="receipt__title" id="receipt-title">오늘 진료 시간</h2>
+        <p class="receipt__date" data-receipt-date>{{hours.label}}</p>
+        <ol class="receipt__rows" data-receipt-rows>
+          <li><span>평일·토요일</span><span>{{hours.open}}–{{hours.close}}</span></li>
+          <li><span>점심시간</span><span>{{hours.lunchStart}}–{{hours.lunchEnd}}</span></li>
+          <li><span>일요일</span><span>휴진</span></li>
+        </ol>
+        <p class="receipt__sum" data-receipt-sum>{{hours.lunchLabel}} · {{hours.closedLabel}}</p>
+        <p class="receipt__note">빈 시간은 예약 화면에서 확인합니다.</p>
+        <a class="receipt__link" href="/app/reserve">예약 화면 열기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+      </aside>
+      </div>
+
+      <div class="bd-top__row">
+        <a class="scrap tag" href="tel:{{phoneTel}}">
+          <span class="tag__label">대표 전화</span>
+          <span class="tag__num">{{phone}}</span>
+        </a>
+        <!-- 고정 공지 (API에서 불러오고, 실패하면 숨긴다) -->
+        <div class="scrap clip clip--pinned" data-pinned-notice hidden>
+          <a href="/notices">
+            <span class="badge badge--accent" data-pinned-category>공지</span>
+            <span class="clip__date" data-pinned-date></span>
+            <span class="clip__title" data-pinned-title></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 진료 과목 -->
+  <section class="bd-sec" id="services">
+    <div class="container">
+      <h2 class="bd-title">진료 과목</h2>
+      <ul class="cards">
+        <li class="scrap card card--manila">
+          <h3>일반 진료</h3>
+          <p>{{visitTypes.0.desc}}. 증상과 생활 습관을 충분히 듣고 진료 계획을 함께 세웁니다.</p>
+          <ul>
+            <li>구토·설사 등 소화기 증상</li>
+            <li>피부·귀 질환, 알레르기</li>
+            <li>노령동물 만성질환 관리</li>
+          </ul>
+          <a class="bd-link" href="/app/reserve?type=GENERAL">일반 진료 예약<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+        </li>
+        <li class="scrap card">
+          <h3>예방접종</h3>
+          <p>{{visitTypes.1.desc}}. 나이와 생활 환경에 맞춘 접종 일정을 안내해 드립니다.</p>
+          <ul>
+            <li>강아지·고양이 종합백신</li>
+            <li>광견병·켄넬코프 접종</li>
+            <li>심장사상충·외부기생충 예방</li>
+          </ul>
+          <a class="bd-link" href="/app/reserve?type=VACCINE">예방접종 예약<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+        </li>
+        <li class="scrap card card--pink">
+          <h3>건강검진</h3>
+          <p>{{visitTypes.2.desc}}. 결과는 보호자님 눈높이에서 하나하나 설명합니다.</p>
+          <ul>
+            <li>기본 혈액·소변 검사</li>
+            <li>엑스레이·초음파 영상 검사</li>
+            <li>7세 이상 노령 맞춤 검진</li>
+          </ul>
+          <a class="bd-link" href="/app/reserve?type=CHECKUP">건강검진 예약<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 예약 원칙: 신문 오림 -->
+  <section class="bd-sec">
+    <div class="container news-wrap">
+      <div class="lift news-lift">
+        <article class="scrap news">
+          <h2 class="news__head">예약한 시간은 온전히<br>우리 아이의 시간입니다</h2>
+          <div class="news__cols">
+            <p>전화가 몰리는 시간에도, 병원 문을 닫은 저녁에도 같은 방식으로 예약을 받고, 같은 시간에 두 보호자가 기다리는 일이 생기지 않도록 예약을 관리합니다.</p>
+            <p><strong>30분 1:1 진료.</strong> 수의사 1명이 30분 동안 한 아이만 진료합니다. 충분히 묻고, 충분히 설명합니다.</p>
+            <p><strong>진료 시간 밖에도 예약.</strong> 밤이나 휴진일에도 온라인으로 예약을 신청하고, 변경·취소도 직접 할 수 있습니다.</p>
+            <p><strong>반려동물별 예약 관리.</strong> 여러 아이를 키워도 아이마다 따로 예약합니다. 접수 전에 어느 아이의 진료인지 미리 준비합니다.</p>
+            <p><strong>병원 확인 후 확정.</strong> 신청한 시간은 바로 잡아 두고, 증상과 진료 항목을 병원이 확인한 뒤 예약을 확정합니다.</p>
+          </div>
+        </article>
+      </div>
+      <p class="scrap memo">한 진료 시간에는 한 아이만.<br>중복 예약 0건을 원칙으로 합니다.</p>
+    </div>
+  </section>
+
+  <!-- 의료진: 명함 -->
+  <section class="bd-sec">
+    <div class="container">
+      <div class="bd-head">
+        <h2 class="bd-title">의료진</h2>
+        <a class="bd-link bd-link--board" href="/doctors">의료진 자세히 보기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+      </div>
+      <ul class="namecards">
+        <li class="scrap namecard">
+          <h3>{{vets.0.name}}<span>{{vets.0.title}}</span></h3>
+          <p class="namecard__field">{{vets.0.field}}</p>
+          <ul class="namecard__career">{{vets.0.career|li}}</ul>
+          <p class="namecard__intro">{{vets.0.intro}}</p>
+        </li>
+        <li class="scrap namecard">
+          <h3>{{vets.1.name}}<span>{{vets.1.title}}</span></h3>
+          <p class="namecard__field">{{vets.1.field}}</p>
+          <ul class="namecard__career">{{vets.1.career|li}}</ul>
+          <p class="namecard__intro">{{vets.1.intro}}</p>
+        </li>
+        <li class="scrap namecard">
+          <h3>{{vets.2.name}}<span>{{vets.2.title}}</span></h3>
+          <p class="namecard__field">{{vets.2.field}}</p>
+          <ul class="namecard__career">{{vets.2.career|li}}</ul>
+          <p class="namecard__intro">{{vets.2.intro}}</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 예약 방법: 번호표 -->
+  <section class="bd-sec">
+    <div class="container">
+      <h2 class="bd-title">온라인 예약 방법</h2>
+      <div class="lift queue-lift">
+        <ol class="scrap queue">
+          <li>
+            <h3>로그인</h3>
+            <p>병원에서 안내받은 보호자 계정으로 로그인합니다.</p>
+          </li>
+          <li>
+            <h3>반려동물 선택</h3>
+            <p>진료받을 아이를 고릅니다. 처음이면 이름·종류·나이만 등록하세요.</p>
+          </li>
+          <li>
+            <h3>진료 항목·시간 선택</h3>
+            <p>오늘부터 {{bookingDays}}일 안의 비어 있는 30분 진료 시간을 선택합니다.</p>
+          </li>
+          <li>
+            <h3>병원 확인 후 확정</h3>
+            <p>신청 즉시 시간이 잡히고, 병원이 확인하면 ‘예약 확정’으로 바뀝니다.</p>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 오시는 길 · 공지 -->
+  <section class="bd-sec">
+    <div class="container bd-info">
+      <div>
+        <div class="bd-head">
+          <h2 class="bd-title">오시는 길</h2>
+          <a class="bd-link bd-link--board" href="/about#location">약도 보기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+        </div>
+        <dl class="scrap luggage">
+          <div><dt>주소</dt><dd>{{address}}</dd></div>
+          <div><dt>지하철</dt><dd>{{transit}}</dd></div>
+          <div><dt>주차</dt><dd>{{parking}}</dd></div>
+          <div><dt>진료 시간</dt><dd>{{hours.label}} · {{hours.lunchLabel}} · {{hours.closedLabel}}</dd></div>
+        </dl>
+      </div>
+      <div>
+        <div class="bd-head">
+          <h2 class="bd-title">공지사항</h2>
+          <a class="bd-link bd-link--board" href="/notices">전체 보기<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+        </div>
+        <div class="scrap clip clip--list">
+          <ul class="notice-list" data-notice-list data-limit="5">
+            <li><div class="skeleton" style="margin:20px 0;width:90%"></div></li>
+            <li><div class="skeleton" style="margin:20px 0;width:75%"></div></li>
+            <li><div class="skeleton" style="margin:20px 0;width:82%"></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 마무리: 다시 예약권 -->
+  <section class="bd-sec bd-close">
+    <div class="container">
+      <div class="lift close-lift">
+        <div class="scrap ticket ticket--close">
+          <div class="ticket__main">
+            <h2 class="ticket__title ticket__title--sm">지금 예약 가능한 시간을<br>확인해 보세요</h2>
+            <p class="ticket__lead">오늘부터 {{bookingDays}}일 안의 진료 시간을 예약 화면에서 실시간으로 보여 드립니다.</p>
+          </div>
+          <div class="ticket__stub ticket__stub--actions">
+            <a class="bd-btn bd-btn--ink" href="/app/reserve">온라인 예약<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#arrow-right"/></svg></a>
+            <a class="bd-btn bd-btn--line" href="tel:{{phoneTel}}">전화 문의</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- @include footer -->
+<script src="/assets/js/board.js" defer></script>
+</body>
+</html>

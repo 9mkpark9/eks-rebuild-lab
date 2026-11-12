@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<!-- @include head -->
+<link rel="stylesheet" href="/assets/css/board-pages.css">
+<title>공지사항 | {{name}}</title>
+<meta name="description" content="{{name}}의 휴진 안내, 예방접종 할인 등 새 소식을 알려 드립니다.">
+</head>
+<body class="board board-page">
+<!-- @include header -->
+
+<main id="main" class="bd">
+  <section class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="현재 위치">
+        <a href="/">홈</a><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg><a href="/notices">공지사항</a>
+      </nav>
+      <h1 class="page-hero__title">공지사항</h1>
+      <p class="page-hero__desc">휴진 일정, 예방접종 할인 예약 오픈 같은 병원 소식을 가장 먼저 알려 드립니다.</p>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:48px">
+    <div class="container">
+      <!-- 목록 -->
+      <div data-board-view="list">
+        <div class="board-tools">
+          <div class="board-filter" role="group" aria-label="분류">
+            <button class="chip" type="button" aria-pressed="true" data-filter="">전체</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter="NOTICE">공지</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter="EVENT">이벤트</button>
+            <button class="chip" type="button" aria-pressed="false" data-filter="CLOSED">휴진</button>
+          </div>
+          <p class="board-count" data-board-count></p>
+        </div>
+        <div class="board" data-board>
+          <div class="board__row board__row--head" aria-hidden="true">
+            <span class="board__num">번호</span><span style="text-align:center">분류</span><span>제목</span><span class="board__date">작성일</span>
+          </div>
+          <div data-board-body>
+            <div class="board__row"><span></span><span></span><div class="skeleton" style="width:70%"></div><span></span></div>
+            <div class="board__row"><span></span><span></span><div class="skeleton" style="width:55%"></div><span></span></div>
+            <div class="board__row"><span></span><span></span><div class="skeleton" style="width:62%"></div><span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 상세 -->
+      <article class="article" data-board-view="detail" hidden>
+        <header class="article__head">
+          <span class="badge" data-article-category></span>
+          <h2 class="article__title" data-article-title></h2>
+          <p class="article__meta"><span data-article-date></span><span>{{name}}</span></p>
+        </header>
+        <div class="article__body" data-article-body></div>
+        <div class="article__foot"><a class="btn btn--outline" href="/notices"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#list"/></svg>목록으로</a></div>
+      </article>
+    </div>
+  </section>
+</main>
+
+<!-- @include footer -->
+</body>
+</html>

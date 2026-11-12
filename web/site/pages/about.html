@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<!-- @include head -->
+<link rel="stylesheet" href="/assets/css/board-pages.css">
+<title>병원 소개 | {{name}}</title>
+<meta name="description" content="{{name}} 인사말, 진료 철학, 시설 안내, 진료 시간과 오시는 길. {{address}} · {{phone}}">
+</head>
+<body class="board board-page">
+<!-- @include header -->
+
+<main id="main" class="bd">
+  <section class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="현재 위치">
+        <a href="/">홈</a><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg><span>병원 소개</span>
+      </nav>
+      <h1 class="page-hero__title">병원 소개</h1>
+      <p class="page-hero__desc">{{name}}은 수의사 3명이 함께 진료하는 동네 동물병원입니다. 오래 다닐 수 있는 병원이 되도록, 한 아이를 오래 보는 진료를 약속합니다.</p>
+    </div>
+  </section>
+
+  <nav class="subnav" aria-label="병원 소개 하위 메뉴" data-subnav>
+    <div class="container">
+      <ul>
+        <li><a href="#greeting">인사말</a></li>
+        <li><a href="#philosophy">진료 철학</a></li>
+        <li><a href="#facility">시설 안내</a></li>
+        <li><a href="#hours">진료 시간</a></li>
+        <li><a href="#location">오시는 길</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="section" id="greeting">
+    <div class="container greeting">
+      <div class="sheet">
+        <p class="greeting__quote">“아픈 날만 찾는 병원이 아니라,<br>건강한 날에도 들르고 싶은 병원이고 싶습니다.”</p>
+        <div class="greeting__body">
+          <p>안녕하세요, {{name}} 대표원장 {{ceo}}입니다. 반려동물은 아파도 말로 표현하지 못합니다. 그래서 진료실에서 보내는 30분이 무엇보다 중요하다고 생각합니다.</p>
+          <p>저희는 모든 진료를 예약제로 운영하며, 한 진료 시간에는 한 아이만 봅니다. 대기실에서 오래 기다리거나, 서둘러 끝나는 진료가 없도록 하기 위해서입니다.</p>
+          <p>예방접종부터 노령동물의 만성질환 관리까지, 우리 아이의 평생을 함께 기록하고 고민하는 주치의가 되겠습니다.</p>
+        </div>
+        <p class="greeting__sign">{{name}} 대표원장<strong>{{ceo}}</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--soft" id="philosophy">
+    <div class="container">
+      <div class="section__head section__head--center">
+        <h2 class="section__title">보듬이 지키는 세 가지</h2>
+      </div>
+      <div class="values">
+        <article class="value-card">
+          <h3 class="value-card__title">충분한 진료 시간</h3>
+          <p class="value-card__desc">30분 단위 예약제로 진료 시간이 겹치지 않게 운영합니다. 보호자님의 질문에 끝까지 답합니다.</p>
+        </article>
+        <article class="value-card">
+          <h3 class="value-card__title">이해할 수 있는 설명</h3>
+          <p class="value-card__desc">검사가 왜 필요한지, 결과가 무엇을 뜻하는지 보호자님 눈높이에서 설명하고 함께 결정합니다.</p>
+        </article>
+        <article class="value-card">
+          <h3 class="value-card__title">평생을 보는 진료</h3>
+          <p class="value-card__desc">오늘의 증상만이 아니라 나이와 생활을 함께 봅니다. 아이마다 진료 기록을 이어서 관리합니다.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="facility">
+    <div class="container">
+      <div class="section__head">
+        <h2 class="section__title">시설 안내</h2>
+        <p class="section__desc">아이들이 덜 긴장하도록 강아지와 고양이의 동선을 나누고, 검사는 진료실 가까이에 두었습니다.</p>
+      </div>
+      <div class="facility">
+        <article class="facility-card">
+          <h3 class="facility-card__title">진료실 3실</h3>
+          <p class="facility-card__desc">수의사마다 독립된 진료실에서 보호자와 함께 진료합니다.</p>
+        </article>
+        <article class="facility-card">
+          <h3 class="facility-card__title">고양이 전용 대기 공간</h3>
+          <p class="facility-card__desc">강아지와 분리된 조용한 공간에서 고양이가 기다립니다.</p>
+        </article>
+        <article class="facility-card">
+          <h3 class="facility-card__title">검사실</h3>
+          <p class="facility-card__desc">혈액·소변 검사와 엑스레이·초음파 영상 검사를 진행합니다.</p>
+        </article>
+        <article class="facility-card">
+          <h3 class="facility-card__title">처치·회복실</h3>
+          <p class="facility-card__desc">주사·처치 후 아이가 안정될 때까지 머무는 공간입니다.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--soft" id="hours">
+    <div class="container location">
+      <div class="sheet">
+        <h2 class="section__title">진료 시간</h2>
+        <p class="section__desc">모든 진료는 30분 단위 예약제입니다. 공휴일 진료 여부는 공지사항으로 안내합니다.</p>
+      </div>
+      <div class="info-card">
+        <table class="hours-table hours-table--lg" data-hours-table>
+          <tbody>
+            <tr data-days="1"><th scope="row">월요일</th><td>{{hours.open}} – {{hours.close}}</td></tr>
+            <tr data-days="2"><th scope="row">화요일</th><td>{{hours.open}} – {{hours.close}}</td></tr>
+            <tr data-days="3"><th scope="row">수요일</th><td>{{hours.open}} – {{hours.close}}</td></tr>
+            <tr data-days="4"><th scope="row">목요일</th><td>{{hours.open}} – {{hours.close}}</td></tr>
+            <tr data-days="5"><th scope="row">금요일</th><td>{{hours.open}} – {{hours.close}}</td></tr>
+            <tr data-days="6"><th scope="row">토요일</th><td>{{hours.open}} – {{hours.close}}</td></tr>
+            <tr class="is-off" data-days="0"><th scope="row">일요일·공휴일</th><td>휴진</td></tr>
+            <tr><th scope="row">점심시간</th><td>{{hours.lunchStart}} – {{hours.lunchEnd}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="location">
+    <div class="container">
+      <div class="section__head">
+        <h2 class="section__title">오시는 길</h2>
+      </div>
+      <div class="location">
+        <figure class="location__map">
+          <img src="/assets/img/map.svg" alt="약도: 보듬역 2번 출구에서 보듬로를 따라 도보 4분, 건물 뒤편 주차장" width="600" height="360">
+          <figcaption>약도는 예시입니다. 운영 시 실제 지도(지도 API 또는 이미지)로 교체합니다.</figcaption>
+        </figure>
+        <div class="location__info">
+          <dl class="dl-list">
+            <div><dt><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#building"/></svg>주소</dt><dd>{{address}}</dd></div>
+            <div><dt><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#train"/></svg>지하철</dt><dd>{{transit}}</dd></div>
+            <div><dt><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#car"/></svg>주차</dt><dd>{{parking}}</dd></div>
+            <div><dt><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화</dt><dd><a class="c-primary" href="tel:{{phoneTel}}"><strong>{{phone}}</strong></a></dd></div>
+          </dl>
+          <a class="btn btn--accent btn--lg btn--block" href="/app/reserve">방문 전 온라인 예약하기</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- @include footer -->
+</body>
+</html>
