@@ -8,11 +8,8 @@ msa/.gradle/
 __pycache__/
 *.pyc
 
-# web/dist/ 는 아직 제외하지 않는다.
-# 정적 페이지 원본(web/site, web/scripts, web/server)이 저장소에 없어서
-# 지금은 web/dist/site 가 소개 페이지의 유일한 사본이다.
-# 원본을 올린 뒤 아래 줄의 주석을 풀고 git rm -r --cached web/dist 를 실행한다.
-# web/dist/
+# web 빌드 결과 — 원본(web/site, web/app)에서 npm run build 로 다시 만든다
+web/dist/
 
 # 실행 기록 — AWS 계정 ID, 엔드포인트, 인스턴스 ID 가 들어 있다
 *.log
