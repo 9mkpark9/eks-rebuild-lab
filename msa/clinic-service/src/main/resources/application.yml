@@ -4,3 +4,7 @@ spring:
     name: vet-clinic
   config:
     import: classpath:vet-common.yml
+
+# 상태 쪽지가 읽는 경로 /api/status/clinic 의 이름 (common 의 StatusController)
+vet:
+  service: clinic

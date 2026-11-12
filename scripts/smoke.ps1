@@ -42,11 +42,11 @@ function Report([bool]$ok, [string]$name, [string]$detail) {
     else { $script:fail++; Write-Host ("[실패] {0} — {1}" -f $name, $detail) }
 }
 
-# 응답을 { Status, Text, Json, WebNode, WebVersion, ServedBy } 로 돌려준다. 4xx·5xx 에서도 예외를 던지지 않는다.
+# 응답을 { Status, Text, Json, WebNode, WebVersion, ServedBy, AppVersion } 로 돌려준다. 4xx·5xx 에서도 예외를 던지지 않는다.
 # Invoke-WebRequest 는 PowerShell 5.1 에서 한글 본문을 깨뜨리고 오류 응답의 본문을 숨기므로 쓰지 않는다.
 function Invoke-Api {
     param([string]$Method, [string]$Path, [System.Net.CookieContainer]$Cookies, [string]$Body)
-    $result = [pscustomobject]@{ Status = 0; Text = ''; Json = $null; WebNode = ''; WebVersion = ''; ServedBy = '' }
+    $result = [pscustomobject]@{ Status = 0; Text = ''; Json = $null; WebNode = ''; WebVersion = ''; ServedBy = ''; AppVersion = '' }
     try {
         $req = [System.Net.HttpWebRequest]::Create($BaseUrl + $Path)
         $req.Method = $Method
@@ -76,6 +76,7 @@ function Invoke-Api {
         $result.WebNode = [string]$resp.Headers['X-Web-Node']
         $result.WebVersion = [string]$resp.Headers['X-Web-Version']
         $result.ServedBy = [string]$resp.Headers['X-Served-By']
+        $result.AppVersion = [string]$resp.Headers['X-App-Version']
         $resp.Close()
         if ($result.Text -and $result.Text.TrimStart().StartsWith('{') -or $result.Text.TrimStart().StartsWith('[')) {
             try { $result.Json = ConvertFrom-Json $result.Text } catch {}
@@ -173,6 +174,19 @@ function Test-Down([string]$label, [string]$path, $jar) {
     Report $ok "$label 멈춘 서비스 경로는 503 JSON" ("{0} → {1}" -f $path, (Brief $r))
 }
 
+# 상태 쪽지(/status)가 읽는 응답: 멈춘 서비스의 줄만 503 이고 나머지는 200 이어야 한다
+function Test-StatusRows([string]$label, [string]$stopped) {
+    $parts = @()
+    $ok = $true
+    foreach ($svc in 'auth', 'clinic', 'reservation') {
+        $s = Invoke-Api 'GET' "/api/status/$svc" $null ''
+        $parts += ("{0} {1}" -f $svc, $s.Status)
+        if ($svc -eq $stopped) { if ($s.Status -ne 503) { $ok = $false } }
+        elseif ($s.Status -ne 200) { $ok = $false }
+    }
+    Report $ok "$label 상태 쪽지는 그 줄만 응답 없음" ($parts -join ', ')
+}
+
 Write-Host ("대상: {0}   격리 확인 방식: {1}" -f $BaseUrl, $Isolation)
 
 # ── 0. 준비: 어떤 순서로 떴든 전부 응답할 때까지 기다린다 ─────────────
@@ -241,6 +255,17 @@ $workDay = Day 1; if ((Get-Date).AddDays(1).DayOfWeek -eq 'Sunday') { $workDay =
 $sch = Invoke-Api 'GET' "/api/director/schedule?date=$workDay" $director.Jar ''
 Report ($sch.Status -eq 200 -and (Get-Items $sch).Count -ge 1) '4 내 일정' ("{0}, {1} 진료 시간 {2}칸, 처리 {3}" -f $sch.Status, $workDay, (Get-Items $sch).Count, $sch.ServedBy)
 
+# ── 버전과 상태 쪽지: 서비스마다 버전과 응답한 서버를 알려 준다 ───────
+Write-Host ''
+Write-Host '== 버전과 상태 쪽지 =='
+foreach ($svc in 'auth', 'clinic', 'reservation') {
+    $s = Invoke-Api 'GET' "/api/status/$svc" $null ''
+    $good = ($s.Status -eq 200 -and $s.Json -and $s.Json.service -eq $svc -and $s.Json.version -and $s.AppVersion -eq $s.Json.version)
+    Report $good "상태 $svc (/api/status/$svc)" $(if ($s.Status -eq 200) { "{0}, 버전 {1}, 응답 {2}" -f $s.Status, $s.Json.version, $s.Json.servedBy } else { Brief $s })
+}
+$page = Invoke-Api 'GET' '/status' $null ''
+Report ($page.Status -eq 200 -and $page.WebVersion) '상태 쪽지 화면 (/status)' ("{0}, web 버전 {1}, 응답 {2}" -f $page.Status, $page.WebVersion, $page.WebNode)
+
 # ── 5. 서비스 격리: 하나가 멈춰도 다른 서비스 경로는 정상이어야 한다 ───
 Write-Host ''
 Write-Host '== 5. 서비스 격리 =='
@@ -253,6 +278,7 @@ if ($Isolation -eq 'none') {
     Set-Service 'auth' $false
     try {
         Test-Down '5-1' '/api/auth/me' $owner.Jar
+        Test-StatusRows '5-1' 'auth'
         Test-OwnerFlow $owner.Jar '5-1 (이미 로그인한 세션)'
     } finally { Set-Service 'auth' $true }
     $ok = Wait-Until { (Invoke-Api 'GET' '/api/auth/me' $owner.Jar '').Status -eq 200 } $WaitSeconds
@@ -262,6 +288,7 @@ if ($Isolation -eq 'none') {
     Set-Service 'clinic' $false
     try {
         Test-Down '5-2' '/api/notices' $null
+        Test-StatusRows '5-2' 'clinic'
         $r = Invoke-Api 'GET' '/api/reservations/me' $owner.Jar ''
         Report ($r.Status -eq 200) '5-2 내 예약 조회' ("{0}, {1}건" -f $r.Status, (Get-Items $r).Count)
         $r = Invoke-Api 'GET' "/api/admin/reservations?date=$workDate" $nurse.Jar ''
@@ -280,6 +307,7 @@ if ($Isolation -eq 'none') {
     Set-Service 'reservation' $false
     try {
         Test-Down '5-3' '/api/reservations/me' $owner.Jar
+        Test-StatusRows '5-3' 'reservation'
         $r = Invoke-Api 'GET' '/api/notices' $null ''
         Report ($r.Status -eq 200) '5-3 공지' ("{0}, {1}건" -f $r.Status, (Get-Items $r).Count)
         $r = Invoke-Api 'GET' '/api/pets' $owner.Jar ''

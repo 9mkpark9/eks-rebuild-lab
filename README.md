@@ -26,7 +26,7 @@ npm start         # http://localhost:8090  (nginx 라우팅 + 모의 예약 API)
 ```
 
 화면 개발 중에는 `npm start`를 켠 채로 `npm run dev`를 실행하면 Vite(5173)가 `/api`와 `/assets`를 모의 서버로 넘깁니다.
-모의 서버 옵션: `PORT`(기본 8090), `LATENCY_MS`(응답 지연, 기본 120), `TEST_PASSWORD`.
+모의 서버 옵션: `PORT`(기본 8090), `LATENCY_MS`(응답 지연, 기본 120), `TEST_PASSWORD`, `MOCK_DOWN`(멈춘 것처럼 보일 서비스, 예: `clinic`).
 
 ### 테스트 계정
 
@@ -58,6 +58,7 @@ npm start         # http://localhost:8090  (nginx 라우팅 + 모의 예약 API)
 | `/doctors` | 의료진 3명 상세 | WEB(정적) |
 | `/services` | 진료 안내 — 진료 항목, 예약 규칙, FAQ | WEB(정적) |
 | `/notices` | 공지사항 목록·상세 (`?id=`) | WEB + `/api/notices` |
+| `/status` | 상태 쪽지 — web·auth·clinic·reservation 의 상태, 버전, 응답한 Pod (5초마다 갱신) | WEB + `/api/status/*` |
 | `/app/login` | 로그인 (보호자·직원 공통) | SPA |
 | `/app/` | 보호자 홈 — 다음 예약, 반려동물, 병원 소식 | SPA |
 | `/app/reserve` | 온라인 예약 — 반려동물 → 진료 항목 → 날짜(14일) → 시간·담당 수의사 | SPA |
@@ -73,6 +74,7 @@ npm start         # http://localhost:8090  (nginx 라우팅 + 모의 예약 API)
 `SLOT_TAKEN`(이미 예약된 시간 → 시간 목록 새로고침), `PET_SAME_DAY`(같은 반려동물·같은 날),
 `CANCELLED`, `NOT_REQUESTED`, 그리고 로그인 `429`(시도 제한)입니다.
 화면 하단에는 마지막 응답의 `X-Web-Node` / `X-Served-By`가 보여 분산을 눈으로 확인할 수 있습니다.
+컨테이너로 띄우면 버전(`X-Web-Version` / `X-App-Version`, 이미지 태그와 같은 값)도 함께 보입니다. 실행 방법은 [docs-msa/로컬실행.md](docs-msa/로컬실행.md)에 있습니다.
 
 ## API 규약
 

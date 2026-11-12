@@ -4,6 +4,9 @@
 //    /health → 200 ok, /api/* → 예약 API, /app/* → dist/app (SPA, 없으면 index.html), / → dist/site
 //    모든 응답에 X-Web-Node, /api 응답에 X-Served-By 를 붙인다. 노드 이름은 두 대씩 번갈아 쓴다
 //    (ALB 라운드 로빈 흉내). 실제 분산 검증은 AWS에서 Locust로 한다.
+//    버전도 함께 붙인다: 모든 응답에 X-Web-Version, /api 응답에 X-App-Version (컨테이너에서는 이미지 태그).
+//    상태 쪽지(/status)가 읽는 /api/status/auth · clinic · reservation 도 흉내 낸다.
+//    MOCK_DOWN=clinic 처럼 주면 그 서비스가 멈춘 것처럼 503 { code: SERVICE_UNAVAILABLE } 을 돌려준다(쉼표로 여러 개).
 // 2) WAS 예약 API 흉내 (6장)
 //    메모리에 슬롯·예약을 두고, DB 판정 규칙을 그대로 따른다.
 //    · 슬롯당 활성 예약 1건 (조건부 UPDATE → 0행이면 409 SLOT_TAKEN)
@@ -28,6 +31,9 @@ const PORT = Number(process.env.PORT || 8090);
 const DIST = path.resolve(root, process.env.DIST || 'dist');
 const LATENCY_MS = Number(process.env.LATENCY_MS ?? 120);
 const TEST_PASSWORD = process.env.TEST_PASSWORD || 'test-only';
+const WEB_VERSION = process.env.WEB_VERSION || 'mock';
+const APP_VERSION = process.env.APP_VERSION || 'mock';
+const MOCK_DOWN = new Set((process.env.MOCK_DOWN || '').split(',').map((s) => s.trim()).filter(Boolean));
 const SESSION_MIN = 30;
 
 const config = JSON.parse(await readFile(path.join(root, 'clinic.config.json'), 'utf8'));
@@ -327,6 +333,12 @@ const route = (method, pattern, handler) => {
   routes.push({ method, re, keys, handler });
 };
 
+// 상태 쪽지: 서비스마다 경로가 하나씩 (웹 서버가 해당 서비스로만 보낸다)
+for (const service of ['auth', 'clinic', 'reservation']) {
+  route('GET', `/api/status/${service}`, async (ctx) =>
+    sendJson(ctx.res, 200, { service, status: 'ok', version: APP_VERSION, servedBy: ctx.node }));
+}
+
 // 인증
 route('POST', '/api/auth/login', async (ctx) => {
   const { loginId = '', password = '' } = await readBody(ctx.req);
@@ -559,8 +571,25 @@ route('GET', '/api/director/stats', async (ctx) => {
   });
 });
 
+/** 웹 서버의 경로 분기표와 같은 규칙: 이 경로를 어느 서비스가 맡는가 */
+function serviceOf(pathname) {
+  const status = pathname.match(/^\/api\/status\/(auth|clinic|reservation)\/?$/);
+  if (status) return status[1];
+  if (pathname.startsWith('/api/auth/')) return 'auth';
+  if (pathname.startsWith('/api/admin/notices')) return 'clinic';
+  if (/^\/api\/(pets|notices|slots)/.test(pathname)) return 'clinic';
+  if (/^\/api\/(reservations|admin\/|director\/)/.test(pathname)) return 'reservation';
+  return null;
+}
+
 async function handleApi(req, res, url, node) {
   const method = req.method === 'HEAD' ? 'GET' : req.method;
+  if (MOCK_DOWN.has(serviceOf(url.pathname))) {
+    // 서비스가 멈추면 웹 서버가 직접 답한다. 서비스 쪽 헤더는 붙지 않는다.
+    res.removeHeader('X-Served-By');
+    res.removeHeader('X-App-Version');
+    fail(503, 'SERVICE_UNAVAILABLE', '지금 이 기능에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+  }
   for (const r of routes) {
     const m = url.pathname.match(r.re);
     if (!m) continue;
@@ -620,11 +649,13 @@ async function handleStatic(req, res, pathname) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   res.setHeader('X-Web-Node', WEB_NODES[webRR++ % WEB_NODES.length]);
+  res.setHeader('X-Web-Version', WEB_VERSION);
   try {
     if (url.pathname === '/health') return sendText(res, 200, 'ok');
     if (url.pathname.startsWith('/api/')) {
       const node = WAS_NODES[wasRR++ % WAS_NODES.length];
       res.setHeader('X-Served-By', node);
+      res.setHeader('X-App-Version', APP_VERSION);
       if (LATENCY_MS > 0) await new Promise((r) => setTimeout(r, LATENCY_MS * (0.5 + rand())));
       return await handleApi(req, res, url, node);
     }

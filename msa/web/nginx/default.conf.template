@@ -53,6 +53,12 @@ server {
 
     # ── /api → 서비스 3개 ─────────────────────────────────────────────
     # nginx 는 가장 긴 접두사를 고르므로 순서와 무관하지만, Apache 판과 같은 순서로 적는다.
+    # 상태 쪽지(/status)가 읽는 경로. 서비스마다 하나씩이라, 한 서비스가 멈추면 그 줄만 응답이 없다.
+    # 화면이 5초마다 부르므로 오래 기다리지 않는다.
+    location = /api/status/auth        { proxy_connect_timeout 2s; proxy_read_timeout 5s; proxy_pass $auth_upstream; }
+    location = /api/status/clinic      { proxy_connect_timeout 2s; proxy_read_timeout 5s; proxy_pass $clinic_upstream; }
+    location = /api/status/reservation { proxy_connect_timeout 2s; proxy_read_timeout 5s; proxy_pass $reservation_upstream; }
+
     location /api/auth/         { proxy_pass $auth_upstream; }
 
     location /api/admin/notices { proxy_pass $clinic_upstream; }
