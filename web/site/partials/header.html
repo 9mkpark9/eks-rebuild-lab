@@ -1,0 +1,60 @@
+<a class="skip-link" href="#main">본문 바로가기</a>
+<div class="topbar">
+  <div class="container topbar__inner">
+    <p class="topbar__status" data-clinic-status
+       data-open="{{hours.open}}" data-close="{{hours.close}}"
+       data-lunch-start="{{hours.lunchStart}}" data-lunch-end="{{hours.lunchEnd}}"
+       data-closed-days="{{hours.closedDays}}">
+      <span class="dot" aria-hidden="true"></span><span data-clinic-status-text>{{hours.label}}</span>
+    </p>
+    <ul class="topbar__info">
+      <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>대표전화 <a href="tel:{{phoneTel}}">{{phone}}</a></li>
+      <li><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#clock"/></svg>{{hours.label}} · {{hours.lunchLabel}} · {{hours.closedLabel}}</li>
+    </ul>
+  </div>
+</div>
+<header class="header" data-header>
+  <div class="container header__inner">
+    <a class="brand" href="/" aria-label="{{name}} 홈">
+      <svg class="brand__mark" viewBox="0 0 40 40" aria-hidden="true">
+        <rect width="40" height="40" rx="12" fill="#0f7a64"/>
+        <ellipse cx="20" cy="25.5" rx="7.6" ry="6.3" fill="#fff"/>
+        <ellipse cx="11.2" cy="18.2" rx="2.9" ry="3.6" transform="rotate(-22 11.2 18.2)" fill="#fff"/>
+        <ellipse cx="16.4" cy="12.4" rx="2.9" ry="3.8" transform="rotate(-6 16.4 12.4)" fill="#fff"/>
+        <ellipse cx="23.6" cy="12.4" rx="2.9" ry="3.8" transform="rotate(6 23.6 12.4)" fill="#fff"/>
+        <ellipse cx="28.8" cy="18.2" rx="2.9" ry="3.6" transform="rotate(22 28.8 18.2)" fill="#fff"/>
+        <path d="M18.7 21.8h2.6v2.5h2.5v2.6h-2.5v2.5h-2.6v-2.5h-2.5v-2.6h2.5z" fill="#ff7a2f"/>
+      </svg>
+      <span class="brand__text"><span class="brand__name">{{name}}</span><span class="brand__en">{{nameEn}}</span></span>
+    </a>
+    <nav class="gnb" aria-label="주 메뉴">
+      <ul>
+        <li><a href="/about" data-nav="about">병원 소개</a></li>
+        <li><a href="/doctors" data-nav="doctors">의료진</a></li>
+        <li><a href="/services" data-nav="services">진료 안내</a></li>
+        <li><a href="/notices" data-nav="notices">공지사항</a></li>
+      </ul>
+    </nav>
+    <div class="header__actions">
+      <a class="header__link" href="/app/reservations"><svg class="icon icon--sm" aria-hidden="true"><use href="/assets/img/icons.svg#user"/></svg>내 예약</a>
+      <a class="btn btn--accent btn--sm header__cta" href="/app/reserve">온라인 예약</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" data-menu-toggle>
+        <svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#menu"/></svg>
+        <span class="sr-only">메뉴 열기</span>
+      </button>
+    </div>
+  </div>
+  <nav class="mobile-menu" id="mobile-menu" aria-label="모바일 메뉴" hidden>
+    <ul>
+      <li><a href="/about" data-nav="about">병원 소개<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/doctors" data-nav="doctors">의료진<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/services" data-nav="services">진료 안내<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/notices" data-nav="notices">공지사항<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+      <li><a href="/app/reservations">내 예약 조회<svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg></a></li>
+    </ul>
+    <div class="mobile-menu__cta">
+      <a class="btn btn--outline" href="tel:{{phoneTel}}"><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#phone"/></svg>전화 문의</a>
+      <a class="btn btn--accent" href="/app/reserve">온라인 예약</a>
+    </div>
+  </nav>
+</header>
