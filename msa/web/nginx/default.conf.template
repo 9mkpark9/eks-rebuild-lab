@@ -1,0 +1,86 @@
+# WEB 컨테이너용 nginx 설정 (Apache 판과 바꿔 쓸 수 있는 두 번째 웹 서버)
+# deploy/nginx.conf(AWS 3-Tier)와 같은 일을 하되, /api 를 서비스 3개로 나눠 보낸다.
+# Apache 판(msa/web/apache/httpd.conf)과 겉으로 보이는 동작이 같아야 한다:
+#   8080 포트, /health, X-Web-Node, 서비스 주소 환경 변수 3개, 죽은 서비스에 대한 503 JSON.
+#
+# 컨테이너가 뜰 때 이미지의 진입 스크립트가 ${...} 를 환경 변수로 채워 conf.d/default.conf 로 만든다.
+#   AUTH_UPSTREAM / CLINIC_UPSTREAM / RESERVATION_UPSTREAM   예) auth:8080, auth.dev.svc.cluster.local:8080
+#   NGINX_LOCAL_RESOLVERS   /etc/resolv.conf 의 DNS 서버 (진입 스크립트가 넣는다)
+#   WEB_VERSION             이미지 태그
+# $hostname, $uri 같은 nginx 변수는 같은 이름의 환경 변수가 없어 그대로 남는다.
+
+log_format vet '$remote_addr [$time_local] "$request" $status $body_bytes_sent '
+               '$request_time "$http_x_forwarded_for"';
+
+server {
+    listen 8080 default_server;
+    server_tokens off;
+    # 앞단 로드밸런서의 유휴 제한(60초)보다 길게 둔다
+    keepalive_timeout 75s;
+    access_log /var/log/nginx/access.log vet;
+
+    # 분산 확인용: 어느 web 이 응답했는지와 그 버전
+    add_header X-Web-Node $hostname always;
+    add_header X-Web-Version "${WEB_VERSION}" always;
+
+    # proxy_pass 에 변수를 쓰면 nginx 는 요청할 때 이름을 찾는다.
+    #  - 서비스가 다시 떠 IP 가 바뀌어도 재시작 없이 따라간다 (5초마다 다시 찾는다).
+    #  - 서비스가 아직 없어도 nginx 는 뜬다. 주소를 직접 적으면 이름을 못 찾을 때 시작부터 실패한다.
+    # 변수 방식은 search 도메인을 쓰지 않으므로 쿠버네티스에서는 전체 이름을 넣는다.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=5s ipv6=off;
+    resolver_timeout 3s;
+    set $auth_upstream        "http://${AUTH_UPSTREAM}";
+    set $clinic_upstream      "http://${CLINIC_UPSTREAM}";
+    set $reservation_upstream "http://${RESERVATION_UPSTREAM}";
+
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 30s;
+
+    # 서비스가 죽어 nginx 가 직접 만드는 오류만 { code, message } JSON 503 으로 바꾼다.
+    # 서비스가 스스로 돌려준 오류(401, 409, 503 DB_UNAVAILABLE …)는 그대로 통과한다 (proxy_intercept_errors 기본값 off).
+    error_page 502 503 504 = @unavailable;
+    location @unavailable {
+        default_type application/json;
+        return 503 '{"code":"SERVICE_UNAVAILABLE","message":"지금 이 기능에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요."}';
+    }
+
+    location = /health { access_log off; default_type text/plain; return 200 'ok'; }
+
+    # ── /api → 서비스 3개 ─────────────────────────────────────────────
+    # nginx 는 가장 긴 접두사를 고르므로 순서와 무관하지만, Apache 판과 같은 순서로 적는다.
+    location /api/auth/         { proxy_pass $auth_upstream; }
+
+    location /api/admin/notices { proxy_pass $clinic_upstream; }
+    location /api/pets          { proxy_pass $clinic_upstream; }
+    location /api/notices       { proxy_pass $clinic_upstream; }
+    location /api/slots         { proxy_pass $clinic_upstream; }
+
+    location /api/reservations  { proxy_pass $reservation_upstream; }
+    location /api/admin/        { proxy_pass $reservation_upstream; }
+    location /api/director/     { proxy_pass $reservation_upstream; }
+
+    location /api/ {
+        default_type application/json;
+        return 404 '{"code":"NOT_FOUND","message":"요청한 정보를 찾을 수 없습니다."}';
+    }
+
+    # ── 예약·관리자 화면 (React SPA) ← web/dist/app ───────────────────
+    # /app → /app/ (Apache 판과 모의 서버가 그렇게 한다). 포트가 바뀌어 전달되어도 맞도록 상대 주소로 보낸다.
+    absolute_redirect off;
+    location = /app { return 301 /app/; }
+    location /app/ {
+        root /usr/share/nginx/vet;
+        try_files $uri /app/index.html;
+    }
+
+    # ── 병원 소개·진료 안내 (정적 HTML) ← web/dist/site ───────────────
+    location / {
+        root /usr/share/nginx/vet/site;
+        try_files $uri $uri.html $uri/ =404;
+    }
+}

@@ -1,0 +1,117 @@
+# 보듬 동물병원 — 로컬 실행: web + 서비스 3개 + MySQL + Redis
+#
+#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\new-env.ps1    # .env 만들기 (처음 한 번)
+#   docker compose up -d --build
+#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1
+#   docker compose down
+#
+# 비밀번호와 포트는 .env 에서 읽는다 (.env 는 커밋하지 않는다. 항목은 .env.example 참고).
+# WEB_SERVER=apache(기본) 또는 nginx 로 웹 서버를 고른다. 두 이미지는 같은 주소와 같은 응답을 낸다.
+#
+# 일부러 depends_on 을 쓰지 않았다. 쿠버네티스에서는 뜨는 순서를 정할 수 없으므로
+# 어떤 순서로 떠도 결국 정상이 되는지를 여기서도 같이 확인한다.
+name: vet
+
+x-service-env: &service-env
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vet?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+  SPRING_DATASOURCE_USERNAME: vet_app
+  SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?.env 에 DB_PASSWORD 가 필요합니다}
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?.env 에 REDIS_PASSWORD 가 필요합니다}
+  REDIS_TLS: "false"                      # 같은 네트워크 안의 Redis 라 TLS 없이 쓴다
+  DB_POOL_MAX: ${DB_POOL_MAX:-5}          # 서비스 3개 x 5 = 15 (MySQL max_connections 151)
+
+x-service-health: &service-health
+  test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+  interval: 5s
+  timeout: 3s
+  retries: 12
+  start_period: 20s
+
+services:
+  web:
+    image: ghcr.io/9mkpark9/vet-web:${VERSION:-1.0.0}-${WEB_SERVER:-apache}
+    build:
+      context: .
+      dockerfile: msa/web/Dockerfile.${WEB_SERVER:-apache}
+      args:
+        VERSION: ${VERSION:-1.0.0}-${WEB_SERVER:-apache}
+    ports:
+      - "${WEB_PORT:-8088}:8080"            # 밖에서 들어오는 길은 이것 하나뿐이다
+    environment:
+      AUTH_UPSTREAM: auth:8080
+      CLINIC_UPSTREAM: clinic:8080
+      RESERVATION_UPSTREAM: reservation:8080
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+
+  auth:
+    image: ghcr.io/9mkpark9/vet-auth:${VERSION:-1.0.0}
+    build:
+      context: msa
+      dockerfile: auth-service/Dockerfile
+      args:
+        VERSION: ${VERSION:-1.0.0}
+    environment: *service-env
+    mem_limit: 512m
+    healthcheck: *service-health
+
+  clinic:
+    image: ghcr.io/9mkpark9/vet-clinic:${VERSION:-1.0.0}
+    build:
+      context: msa
+      dockerfile: clinic-service/Dockerfile
+      args:
+        VERSION: ${VERSION:-1.0.0}
+    environment: *service-env
+    mem_limit: 512m
+    healthcheck: *service-health
+
+  reservation:
+    image: ghcr.io/9mkpark9/vet-reservation:${VERSION:-1.0.0}
+    build:
+      context: msa
+      dockerfile: reservation-service/Dockerfile
+      args:
+        VERSION: ${VERSION:-1.0.0}
+    environment: *service-env
+    mem_limit: 512m
+    healthcheck: *service-health
+
+  mysql:
+    image: ghcr.io/9mkpark9/vet-db:${VERSION:-1.0.0}
+    build:
+      context: .
+      dockerfile: msa/db/Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?.env 에 DB_ROOT_PASSWORD 가 필요합니다}
+      MYSQL_DATABASE: vet
+      MYSQL_USER: vet_app
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    # 볼륨 없이 메모리에만 둔다. 컨테이너를 다시 띄우면 스키마와 "오늘 기준" 시드로 돌아간다 (쿠버네티스의 emptyDir 와 같은 동작).
+    tmpfs:
+      - /var/lib/mysql
+    mem_limit: 1g
+    healthcheck:
+      # 초기화 중에는 TCP 를 열지 않으므로, TCP 로 시드 테이블이 읽히면 준비가 끝난 것이다
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql -u\"$$MYSQL_USER\" --protocol=tcp --host=127.0.0.1 -N -e 'SELECT 1 FROM vet.users LIMIT 1' > /dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    # 세션 저장소. 디스크에 남기지 않는다 (다시 뜨면 모두 로그아웃된다).
+    command: ["sh", "-c", "exec redis-server --save '' --appendonly no --requirepass \"$$REDIS_PASSWORD\""]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 6

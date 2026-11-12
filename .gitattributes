@@ -1,0 +1,15 @@
+# 컨테이너 안에서 읽는 파일은 Windows 에서 체크아웃해도 LF 로 둔다.
+# CRLF 가 섞이면 셸 스크립트는 실행되지 않고 설정 파일은 값 끝에 \r 이 붙는다.
+# 원본 폴더(deploy/, db/ 등)의 파일은 건드리지 않도록 msa/ 아래로만 한정한다.
+msa/**/*.sh         text eol=lf
+msa/**/*.cgi        text eol=lf
+msa/**/*.conf       text eol=lf
+msa/**/*.template   text eol=lf
+msa/**/*.cnf        text eol=lf
+msa/**/*.json       text eol=lf
+msa/**/Dockerfile*  text eol=lf
+msa/gradlew         text eol=lf
+scripts/*.ps1       text eol=crlf
+msa/**/*.asis       text eol=lf
+.dockerignore       text eol=lf
+msa/.dockerignore   text eol=lf

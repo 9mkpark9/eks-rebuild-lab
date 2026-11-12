@@ -1,0 +1,34 @@
+# vet-web 이미지 — Apache httpd 판 (기본)
+# 빌드 위치는 저장소 루트다 (web/ 이 필요하다):
+#   docker build -f msa/web/Dockerfile.apache --build-arg VERSION=1.0.0-apache -t ghcr.io/9mkpark9/vet-web:1.0.0-apache .
+# nginx 판(Dockerfile.nginx)과 1) 빌드 단계가 같고 2) 겉으로 보이는 동작이 같다.
+
+# ── 1) 화면 빌드: 예약 앱(React)과 소개 페이지(정적 HTML) ─────────────
+FROM node:22-alpine AS build
+WORKDIR /web
+# 의존성 목록만 먼저 복사한다. 화면 소스만 바뀌면 npm ci 층을 다시 만들지 않는다.
+COPY web/package.json web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY web/ ./
+RUN npm run build
+
+# ── 2) 실행 ───────────────────────────────────────────────────────────
+FROM httpd:2.4-alpine
+COPY msa/web/apache/httpd.conf /usr/local/apache2/conf/httpd.conf
+COPY msa/web/errors/ /usr/local/apache2/vet/errors/
+COPY --from=build /web/dist/site /usr/local/apache2/vet/site
+COPY --from=build /web/dist/app  /usr/local/apache2/vet/app
+# Windows 에서 체크아웃하면 CRLF 일 수 있다. .asis 는 첫 줄이 헤더라 \r 이 섞이면 안 된다.
+RUN printf 'ok' > /usr/local/apache2/vet/health.txt \
+ && sed -i 's/\r$//' /usr/local/apache2/conf/httpd.conf /usr/local/apache2/vet/errors/*
+
+ARG VERSION=dev
+ENV WEB_VERSION=${VERSION} \
+    AUTH_UPSTREAM=auth:8080 \
+    CLINIC_UPSTREAM=clinic:8080 \
+    RESERVATION_UPSTREAM=reservation:8080
+
+# www-data (숫자로 적어야 쿠버네티스의 runAsNonRoot 검사를 통과한다)
+USER 82:82
+EXPOSE 8080
+# 종료 신호는 기반 이미지가 SIGWINCH(graceful-stop)로 정해 두었다: 처리 중인 요청을 마치고 내려간다.
