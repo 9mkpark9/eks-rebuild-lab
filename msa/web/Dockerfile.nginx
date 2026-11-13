@@ -1,0 +1,35 @@
+# vet-web 이미지 — nginx 판
+# 빌드 위치는 저장소 루트다 (web/ 이 필요하다):
+#   docker build -f msa/web/Dockerfile.nginx --build-arg VERSION=1.0.0-nginx -t ghcr.io/9mkpark9/vet-web:1.0.0-nginx .
+# Apache 판(Dockerfile.apache)과 1) 빌드 단계가 같고 2) 겉으로 보이는 동작이 같다.
+
+# ── 1) 화면 빌드: 예약 앱(React)과 소개 페이지(정적 HTML) ─────────────
+FROM node:22-alpine AS build
+WORKDIR /web
+# 의존성 목록만 먼저 복사한다. 화면 소스만 바뀌면 npm ci 층을 다시 만들지 않는다.
+COPY web/package.json web/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY web/ ./
+RUN npm run build
+
+# ── 2) 실행 ───────────────────────────────────────────────────────────
+# root 가 아닌 사용자(101)로 8080 에서 뜨도록 만들어진 공식 변형 이미지
+FROM nginxinc/nginx-unprivileged:stable-alpine
+COPY msa/web/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=build /web/dist/site /usr/share/nginx/vet/site
+COPY --from=build /web/dist/app  /usr/share/nginx/vet/app
+USER root
+RUN sed -i 's/\r$//' /etc/nginx/templates/default.conf.template
+
+ARG VERSION=dev
+# NGINX_ENTRYPOINT_LOCAL_RESOLVERS: 진입 스크립트가 /etc/resolv.conf 의 DNS 서버를 NGINX_LOCAL_RESOLVERS 로 넣는다.
+# 도커(127.0.0.11)와 쿠버네티스(클러스터 DNS)의 주소가 달라서 이미지에 적어 둘 수 없다.
+ENV WEB_VERSION=${VERSION} \
+    AUTH_UPSTREAM=auth:8080 \
+    CLINIC_UPSTREAM=clinic:8080 \
+    RESERVATION_UPSTREAM=reservation:8080 \
+    NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
+
+USER 101:101
+EXPOSE 8080
+# 종료 신호는 기반 이미지가 SIGQUIT(graceful shutdown)로 정해 두었다.

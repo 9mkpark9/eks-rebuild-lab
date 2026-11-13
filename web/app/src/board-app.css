@@ -64,6 +64,7 @@ body.board {
 .board .app-footer strong { color: #fff; }
 .board .app-footer a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 .board .app-footer code { background: rgba(255, 255, 255, .14); color: #fff; font-family: var(--f-mono); }
+.board .app-footer__ver { color: #fff; font-family: var(--f-mono); }
 
 /* ---------- 버튼 ---------- */
 .board .app-main .btn { font-family: var(--f-sign); font-weight: 400; font-size: 1.1875rem; transition: transform .12s var(--step), background-color .12s var(--step), color .12s var(--step); }

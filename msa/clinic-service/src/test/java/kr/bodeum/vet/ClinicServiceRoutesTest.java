@@ -26,7 +26,8 @@ class ClinicServiceRoutesTest {
                 "GET /api/pets", "POST /api/pets", "PUT /api/pets/{id}",
                 "GET /api/notices", "GET /api/notices/{id}",
                 "POST /api/admin/notices", "DELETE /api/admin/notices/{id}",
-                "GET /api/slots");
+                "GET /api/slots",
+                "GET /api/status/clinic");
     }
 
     @Test
@@ -60,5 +61,14 @@ class ClinicServiceRoutesTest {
         var res = ServiceProbe.get(port, "/api/notices");
         assertThat(res.statusCode()).isEqualTo(503);
         assertThat(res.body()).contains("\"code\":\"DB_UNAVAILABLE\"");
+    }
+
+    @Test
+    @DisplayName("/api/status/clinic 는 저장소 없이 200 이고 서비스 이름, 버전, 응답한 서버를 돌려준다")
+    void statusAndVersion() {
+        var res = ServiceProbe.get(port, "/api/status/clinic");
+        assertThat(res.statusCode()).isEqualTo(200);
+        assertThat(res.body()).contains("\"service\":\"clinic\"", "\"status\":\"ok\"", "\"version\":\"", "\"servedBy\":\"");
+        assertThat(res.headers().firstValue("X-App-Version")).isPresent();
     }
 }

@@ -1,0 +1,95 @@
+# web: 소개 페이지, 예약 화면, 상태 쪽지를 주고 /api 를 서비스 3개로 나눠 보낸다.
+# 밖에서 들어오는 길은 이 Service(LoadBalancer) 하나뿐이다. Ingress 컨트롤러는 쓰지 않는다.
+# 이미지는 Apache 판(…-apache)과 nginx 판(…-nginx)이 있고, 이 파일은 둘에 똑같이 쓰인다. 태그만 바꾸면 전환된다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      # 종료 순서: preStop 5초(그 사이 Service 에서 빠진다) → 종료 신호 → 처리 중인 요청을 마치고 내려간다
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        # 사용자 번호는 이미지가 정한다 (Apache 82, nginx 101). 여기서는 root 가 아니라는 것만 강제한다.
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: ghcr.io/9mkpark9/vet-web
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            # nginx 는 요청할 때 이름을 찾는데 그때 검색 도메인을 쓰지 않는다. 그래서 전체 이름으로 준다.
+            # 네임스페이스는 위에서 받아 넣으므로 dev 와 prod 가 같은 파일을 쓴다.
+            - name: AUTH_UPSTREAM
+              value: auth.$(POD_NAMESPACE).svc.cluster.local:8080
+            - name: CLINIC_UPSTREAM
+              value: clinic.$(POD_NAMESPACE).svc.cluster.local:8080
+            - name: RESERVATION_UPSTREAM
+              value: reservation.$(POD_NAMESPACE).svc.cluster.local:8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          # 측정(docker stats): Apache 15~19MiB, nginx 11MiB, 초당 80건에서 CPU 0.12코어
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  type: LoadBalancer
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

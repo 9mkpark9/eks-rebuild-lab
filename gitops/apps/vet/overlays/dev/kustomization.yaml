@@ -1,0 +1,29 @@
+# dev: main 을 따라가는 환경. 복제본은 1개씩이고 DB 는 클러스터 안의 MySQL Pod 다.
+#   kubectl kustomize gitops/apps/vet/overlays/dev
+#   kubectl apply -k gitops/apps/vet/overlays/dev
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: dev
+
+resources:
+  - namespace.yaml
+  - ../../base
+
+components:
+  - ../../components/db-in-cluster
+
+# dev 에 배포할 버전. 이미지 태그는 이 한 곳에서만 정한다.
+# main 에 새 이미지가 만들어지면 이 값이 바뀌고, 그것이 곧 dev 배포다.
+# web 의 태그 끝(-apache / -nginx)으로 웹 서버를 고른다.
+images:
+  - name: ghcr.io/9mkpark9/vet-web
+    newTag: 1.0.0-apache
+  - name: ghcr.io/9mkpark9/vet-auth
+    newTag: 1.0.0
+  - name: ghcr.io/9mkpark9/vet-clinic
+    newTag: 1.0.0
+  - name: ghcr.io/9mkpark9/vet-reservation
+    newTag: 1.0.0
+  - name: ghcr.io/9mkpark9/vet-db
+    newTag: 1.0.0

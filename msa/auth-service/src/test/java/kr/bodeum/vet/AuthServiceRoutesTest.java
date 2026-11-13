@@ -23,7 +23,8 @@ class AuthServiceRoutesTest {
     @DisplayName("맡은 경로만 가진다 (웹 서버의 경로 분기표와 같아야 한다)")
     void ownsExactlyItsRoutes() {
         assertThat(ServiceProbe.apiRoutes(context)).containsExactlyInAnyOrder(
-                "POST /api/auth/login", "POST /api/auth/logout", "GET /api/auth/me");
+                "POST /api/auth/login", "POST /api/auth/logout", "GET /api/auth/me",
+                "GET /api/status/auth");
     }
 
     @Test
@@ -49,5 +50,14 @@ class AuthServiceRoutesTest {
         var res = ServiceProbe.get(port, "/api/pets");
         assertThat(res.statusCode()).isEqualTo(404);
         assertThat(res.body()).contains("\"code\":\"NOT_FOUND\"");
+    }
+
+    @Test
+    @DisplayName("/api/status/auth 는 저장소 없이 200 이고 서비스 이름, 버전, 응답한 서버를 돌려준다")
+    void statusAndVersion() {
+        var res = ServiceProbe.get(port, "/api/status/auth");
+        assertThat(res.statusCode()).isEqualTo(200);
+        assertThat(res.body()).contains("\"service\":\"auth\"", "\"status\":\"ok\"", "\"version\":\"", "\"servedBy\":\"");
+        assertThat(res.headers().firstValue("X-App-Version")).isPresent();
     }
 }

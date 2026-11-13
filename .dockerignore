@@ -1,0 +1,20 @@
+# 저장소 루트에서 빌드하는 이미지(web, db)에 보내지 않는 것.
+# 서비스 이미지는 msa/ 에서 빌드하며 msa/.dockerignore 를 쓴다.
+.git
+.env
+.env.*
+**/node_modules
+**/build
+**/.gradle
+web/dist
+was
+cfn
+deploy
+loadtest
+docs-msa
+gitops
+scripts
+msa/*-service
+msa/common
+msa/gradle
+*.md

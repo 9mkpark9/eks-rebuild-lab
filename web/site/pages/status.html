@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<!-- @include head -->
+<link rel="stylesheet" href="/assets/css/board-pages.css">
+<link rel="stylesheet" href="/assets/css/board-status.css">
+<title>상태 쪽지 | {{name}}</title>
+<meta name="description" content="{{name}} 사이트를 이루는 네 부분이 지금 응답하는지, 어느 버전인지 보여 줍니다.">
+<meta name="robots" content="noindex">
+</head>
+<body class="board board-page">
+<!-- @include header -->
+
+<main id="main" class="bd">
+  <section class="page-hero">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="현재 위치">
+        <a href="/">홈</a><svg class="icon" aria-hidden="true"><use href="/assets/img/icons.svg#chevron-right"/></svg><span>상태 쪽지</span>
+      </nav>
+      <h1 class="page-hero__title">상태 쪽지</h1>
+      <p class="page-hero__desc">이 사이트를 이루는 네 부분이 지금 응답하는지, 어느 버전인지 적어 둔 쪽지입니다. 5초마다 다시 확인하고, 한 곳이 멈추면 그 줄만 바뀝니다.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container status-wrap">
+      <div class="lift status-lift">
+        <section class="scrap receipt status" aria-labelledby="status-title" data-status data-interval="5000">
+          <h2 class="receipt__title" id="status-title">지금 상태</h2>
+          <p class="receipt__date" data-status-time>확인하는 중</p>
+
+          <table class="status__table" role="table">
+            <thead role="rowgroup">
+              <tr role="row">
+                <th role="columnheader" scope="col">이름</th>
+                <th role="columnheader" scope="col">상태</th>
+                <th role="columnheader" scope="col">버전</th>
+                <th role="columnheader" scope="col">응답한 Pod</th>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              <tr role="row" data-service="web" data-url="/health" data-source="headers" data-state="wait">
+                <th role="rowheader" scope="row" class="status__name">web<span>소개 페이지 · 예약 화면</span></th>
+                <td role="cell" class="status__state"><b data-cell="state">확인 중</b></td>
+                <td role="cell" class="status__version" data-label="버전"><span data-cell="version">—</span></td>
+                <td role="cell" class="status__node" data-label="Pod"><span data-cell="node">—</span></td>
+              </tr>
+              <tr role="row" data-service="auth" data-url="/api/status/auth" data-state="wait">
+                <th role="rowheader" scope="row" class="status__name">auth<span>로그인</span></th>
+                <td role="cell" class="status__state"><b data-cell="state">확인 중</b></td>
+                <td role="cell" class="status__version" data-label="버전"><span data-cell="version">—</span></td>
+                <td role="cell" class="status__node" data-label="Pod"><span data-cell="node">—</span></td>
+              </tr>
+              <tr role="row" data-service="clinic" data-url="/api/status/clinic" data-state="wait">
+                <th role="rowheader" scope="row" class="status__name">clinic<span>반려동물 · 공지 · 예약 가능 시간</span></th>
+                <td role="cell" class="status__state"><b data-cell="state">확인 중</b></td>
+                <td role="cell" class="status__version" data-label="버전"><span data-cell="version">—</span></td>
+                <td role="cell" class="status__node" data-label="Pod"><span data-cell="node">—</span></td>
+              </tr>
+              <tr role="row" data-service="reservation" data-url="/api/status/reservation" data-state="wait">
+                <th role="rowheader" scope="row" class="status__name">reservation<span>예약 · 직원 화면</span></th>
+                <td role="cell" class="status__state"><b data-cell="state">확인 중</b></td>
+                <td role="cell" class="status__version" data-label="버전"><span data-cell="version">—</span></td>
+                <td role="cell" class="status__node" data-label="Pod"><span data-cell="node">—</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <p class="receipt__sum" data-status-sum aria-live="polite">네 곳에 물어보는 중입니다.</p>
+          <noscript><p class="receipt__note">이 쪽지는 JavaScript 로 상태를 확인합니다. JavaScript 를 켜면 값이 채워집니다.</p></noscript>
+        </section>
+      </div>
+
+      <aside class="scrap status-note" aria-labelledby="status-note-title">
+        <h2 class="status-note__title" id="status-note-title">읽는 법</h2>
+        <dl>
+          <div><dt>정상</dt><dd>물어본 지 3초 안에 답했습니다.</dd></div>
+          <div><dt>응답 없음</dt><dd>답이 없거나 오류를 돌려줬습니다. 다른 줄은 영향을 받지 않습니다.</dd></div>
+          <div><dt>버전</dt><dd>배포한 이미지의 태그입니다. 새로 배포하면 이 값이 바뀝니다.</dd></div>
+          <div><dt>응답한 Pod</dt><dd>이번에 답한 Pod 의 이름입니다. 여러 개가 돌면 확인할 때마다 달라질 수 있습니다.</dd></div>
+        </dl>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<!-- @include footer -->
+<script src="/assets/js/status.js" defer></script>
+</body>
+</html>

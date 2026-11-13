@@ -1,0 +1,41 @@
+# 배포나 노드 정비(drain)로 Pod 를 내릴 때 최소 1개는 남긴다.
+# 과제 요구는 web 이고, 서비스 3개도 같은 이유로 넣었다.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: web
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: auth
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: clinic
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: clinic
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: reservation
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: reservation

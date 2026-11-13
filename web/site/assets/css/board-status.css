@@ -1,0 +1,71 @@
+/* ==========================================================================
+   상태 쪽지 (pages/status.html, body.board.board-page)
+   홈의 영수증 띠(.receipt)를 넓게 펴서 표로 쓰고, 옆에 마닐라 꼬리표로 읽는 법을 붙인다.
+   색·활자·그림자·움직임은 board-shell.css 와 board.css 의 것을 그대로 쓴다. 새 색과 새 글꼴은 없다.
+   ========================================================================== */
+
+.status-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 44px; align-items: start; }
+
+/* ---------- 영수증: 지금 상태 ---------- */
+.status-lift { max-width: 760px; transform: rotate(-.8deg); transform-origin: 30% 0; }
+.status.receipt { --pin-x: 16%; padding: 48px 30px 42px; }
+.status .receipt__title, .status .receipt__date { text-align: left; }
+
+.status__table { width: 100%; margin-top: 12px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.status__table th, .status__table td { padding: 12px 8px; text-align: left; vertical-align: baseline; font-weight: 400; }
+.status__table thead th { padding: 2px 8px 8px; border-bottom: 2px solid var(--ink); font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.status__table tbody tr { border-bottom: 1px dashed var(--ink); }
+.status__table tbody tr:last-child { border-bottom: 0; }
+
+.status__table .status__name { font-weight: 700; }
+.status__name span { display: block; font-family: var(--font); font-size: 14px; font-weight: 500; line-height: 1.45; color: var(--ink-soft); }
+.status__state { white-space: nowrap; }
+.status__state b { font-weight: 700; }
+.status__node { overflow-wrap: anywhere; }
+
+/* 확인 중: 아직 모르는 값이라 옅은 잉크로만 낮춘다 */
+.status__table tr[data-state="wait"] .status__state b { font-weight: 400; color: var(--ink-soft); }
+
+/* 응답 없음: 한 단계 물러난 줄은 빗금과 옅은 잉크로, 상태 글자는 도장 빨강의 경고 딱지로 */
+.status__table tr[data-state="down"] { background: var(--hatch); color: var(--ink-soft); }
+.status__table tr[data-state="down"] .status__name { color: var(--ink); }
+.status__table tr[data-state="down"] .status__state b { display: inline-block; padding: 3px 10px; background: var(--paper); color: var(--red); box-shadow: inset 0 0 0 2px var(--red); }
+
+/* 상태가 바뀐 줄만 종이를 집었다 놓듯 두 번 끊어 움직인다 */
+.status__table tr.is-changed > * { animation: status-set .18s var(--step); }
+@keyframes status-set { from { transform: translateX(-6px); } to { transform: none; } }
+
+.status .receipt__sum { margin-top: 12px; }
+
+/* ---------- 꼬리표: 읽는 법 ---------- */
+.status-note { --pin-x: 78%; margin-top: 64px; padding: 46px 24px 26px; background: var(--manila); transform: rotate(1.6deg); }
+.status-note__title { font-family: var(--f-sign); font-weight: 400; font-size: 1.5rem; line-height: 1.2; }
+.status-note dl { margin-top: 10px; }
+.status-note dl > div { padding: 10px 0; border-top: 1px dashed var(--ink); }
+.status-note dl > div:first-child { border-top: 2px solid var(--ink); }
+.status-note dt { font-family: var(--f-mono); font-size: 15px; font-weight: 700; }
+.status-note dd { margin: 2px 0 0; font-size: 15px; font-weight: 600; line-height: 1.55; }
+
+/* ---------- 좁아질 때: 쪽지를 줄이지 않고 한 줄로 다시 꽂는다 ---------- */
+@media (max-width: 900px) {
+  .status-wrap { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .status-lift { max-width: none; }
+  .status-note { max-width: 420px; margin-top: 0; margin-left: auto; }
+}
+
+@media (max-width: 640px) {
+  .status-lift { transform: rotate(-.4deg); }
+  .status.receipt { padding: 46px 18px 36px; }
+  /* 표를 줄마다 한 덩이로 편다: 이름과 상태가 한 줄, 버전과 Pod 가 그 아래 */
+  .status__table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .status__table tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 14px 6px; }
+  .status__table th, .status__table td { padding: 0; }
+  .status__state { justify-self: end; }
+  .status__version, .status__node { grid-column: 1 / -1; display: flex; gap: 10px; }
+  .status__version::before, .status__node::before { content: attr(data-label); flex: none; width: 3em; font-weight: 700; color: var(--ink-soft); }
+  .status-note { max-width: none; margin-left: 0; transform: rotate(.8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status__table tr.is-changed > * { animation: none; }
+}

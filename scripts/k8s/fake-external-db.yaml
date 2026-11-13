@@ -1,0 +1,70 @@
+# 시험용: RDS 대역. 아무것도 들어 있지 않은 MySQL 8.4 하나를 별도 네임스페이스에 띄운다.
+# 로컬 클러스터에서 prod 구성(components/db-external)을 시험할 때만 쓴다. 실제 환경에는 배포하지 않는다.
+#   - 스키마도 계정도 없는 빈 서버다. prod 의 초기화 Job 이 관리자 계정으로 접속해 전부 만든다.
+#   - 관리자 비밀번호는 Secret(fake-rds 네임스페이스의 fake-rds, 키 root-password)에서 받는다.
+#   - prod 에서 보는 주소: mysql.fake-rds.svc.cluster.local
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fake-rds
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: fake-rds
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          ports:
+            - name: mysql
+              containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: fake-rds
+                  key: root-password
+          readinessProbe:
+            tcpSocket:
+              port: mysql
+            periodSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 768Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: fake-rds
+spec:
+  selector:
+    app: mysql
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: mysql

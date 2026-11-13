@@ -25,7 +25,8 @@ class ReservationServiceRoutesTest {
         assertThat(ServiceProbe.apiRoutes(context)).containsExactlyInAnyOrder(
                 "POST /api/reservations", "GET /api/reservations/me", "PUT /api/reservations/{id}", "DELETE /api/reservations/{id}",
                 "GET /api/admin/reservations", "POST /api/admin/reservations/{id}/approve", "GET /api/admin/slots",
-                "GET /api/director/schedule", "PUT /api/director/slots/{id}", "GET /api/director/stats");
+                "GET /api/director/schedule", "PUT /api/director/slots/{id}", "GET /api/director/stats",
+                "GET /api/status/reservation");
     }
 
     @Test
@@ -51,5 +52,14 @@ class ReservationServiceRoutesTest {
         var res = ServiceProbe.get(port, "/api/admin/notices");
         assertThat(res.statusCode()).isEqualTo(404);
         assertThat(res.body()).contains("\"code\":\"NOT_FOUND\"");
+    }
+
+    @Test
+    @DisplayName("/api/status/reservation 는 저장소 없이 200 이고 서비스 이름, 버전, 응답한 서버를 돌려준다")
+    void statusAndVersion() {
+        var res = ServiceProbe.get(port, "/api/status/reservation");
+        assertThat(res.statusCode()).isEqualTo(200);
+        assertThat(res.body()).contains("\"service\":\"reservation\"", "\"status\":\"ok\"", "\"version\":\"", "\"servedBy\":\"");
+        assertThat(res.headers().firstValue("X-App-Version")).isPresent();
     }
 }

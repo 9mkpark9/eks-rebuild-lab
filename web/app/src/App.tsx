@@ -185,8 +185,8 @@ function AppFooter() {
     <footer className="app-footer">
       <div className="container app-footer__inner">
         <p><strong>{clinic.name}</strong> · {clinic.address} · <a href={`tel:${clinic.phone.replace(/[^0-9]/g, '')}`}>{clinic.phone}</a></p>
-        <p className="app-footer__node" title="분산 확인용 응답 헤더 X-Web-Node / X-Served-By">
-          <Icon name="server" className="icon--sm" />마지막 응답 · WEB <code>{shortNode(node.web)}</code> · WAS <code>{shortNode(node.was)}</code>
+        <p className="app-footer__node" title="분산 확인용 응답 헤더 X-Web-Node / X-Served-By 와 버전 X-Web-Version / X-App-Version">
+          <Icon name="server" className="icon--sm" />마지막 응답 · WEB <code>{shortNode(node.web)}</code>{node.webVersion && <span className="app-footer__ver">{node.webVersion}</span>} · WAS <code>{shortNode(node.was)}</code>{node.wasVersion && <span className="app-footer__ver">{node.wasVersion}</span>} · <a href="/status">상태 쪽지</a>
         </p>
       </div>
     </footer>

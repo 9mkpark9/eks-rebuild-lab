@@ -59,7 +59,7 @@ export function EmrShell({ tabs, children }: { tabs: EmrTab[]; children: ReactNo
       <main id="main" className="emr-content">{children}</main>
       <footer className="emr-statusbar">
         <span>접속 <b>{user?.name}</b> ({user ? roleLabel(user.role, user.vetId) : '-'})</span>
-        <span className="hide-sm">WEB <code>{shortNode(node.web)}</code> · WAS <code>{shortNode(node.was)}</code></span>
+        <span className="hide-sm">WEB <code>{shortNode(node.web)}</code>{node.webVersion && <> {node.webVersion}</>} · WAS <code>{shortNode(node.was)}</code>{node.wasVersion && <> {node.wasVersion}</>}</span>
         <span className="ok">● 서버 정상</span>
         <span style={{ marginLeft: 'auto' }}>{clock}</span>
         <span className="hide-sm">{clinic.name} {clinic.phone}</span>

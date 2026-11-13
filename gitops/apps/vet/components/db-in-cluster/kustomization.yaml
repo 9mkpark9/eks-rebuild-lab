@@ -1,0 +1,7 @@
+# DB 를 클러스터 안의 MySQL Pod 로 쓴다.
+# 서비스 3개의 DB_HOST 는 바탕의 기본값(mysql, 이 Service 의 이름)을 그대로 쓴다.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+  - mysql.yaml

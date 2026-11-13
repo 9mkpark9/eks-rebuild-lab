@@ -25,9 +25,10 @@ export function messageOf(err: unknown): string {
   return '알 수 없는 오류가 발생했습니다.';
 }
 
-/* 분산 확인용 헤더 (X-Web-Node, X-Served-By) — 화면 하단에 마지막 처리 서버를 보여 준다 */
-export interface NodeInfo { web: string | null; was: string | null }
-let lastNode: NodeInfo = { web: null, was: null };
+/* 분산 확인용 헤더 (X-Web-Node, X-Served-By) — 화면 하단에 마지막 처리 서버를 보여 준다.
+   버전 헤더(X-Web-Version, X-App-Version)는 이미지 태그와 같은 값이라 배포 전후로 바뀐다. */
+export interface NodeInfo { web: string | null; was: string | null; webVersion: string | null; wasVersion: string | null }
+let lastNode: NodeInfo = { web: null, was: null, webVersion: null, wasVersion: null };
 const nodeListeners = new Set<() => void>();
 export const nodeStore = {
   get: () => lastNode,
@@ -53,7 +54,13 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   const web = res.headers.get('X-Web-Node');
   const was = res.headers.get('X-Served-By');
   if (web || was) {
-    lastNode = { web, was: was ?? lastNode.was };
+    // 웹 서버가 직접 답한 응답(서비스가 멈췄을 때의 503 등)에는 서비스 쪽 헤더가 없다. 그때는 마지막 값을 둔다.
+    lastNode = {
+      web,
+      was: was ?? lastNode.was,
+      webVersion: res.headers.get('X-Web-Version') ?? lastNode.webVersion,
+      wasVersion: was ? res.headers.get('X-App-Version') : lastNode.wasVersion,
+    };
     nodeListeners.forEach((fn) => fn());
   }
 

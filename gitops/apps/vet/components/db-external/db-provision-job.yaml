@@ -1,0 +1,75 @@
+# 바깥 DB(RDS)를 처음 상태로 만든다: 스키마, 그날 기준 시드, 서비스별 스키마·계정·뷰
+# vet-db 이미지를 DB 서버가 아니라 초기화 도구(vet-provision)로 실행한다.
+# 이미 초기화돼 있으면 아무것도 하지 않고 끝난다. 클러스터를 다시 만들어 이 Job 이 또 돌아도 데이터는 남는다.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-provision
+  labels:
+    app: db-provision
+  annotations:
+    # Argo CD: 동기화할 때마다 이전 Job 을 지우고 새로 만든다 (Job 은 고칠 수 없는 자원이다)
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 6
+  # 끝난 Job 은 하루 뒤 정리된다
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: db-provision
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: provision
+          image: ghcr.io/9mkpark9/vet-db
+          command: ["vet-provision"]
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: vet-db-external
+                  key: host
+            - name: DB_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: vet-db-external
+                  key: admin-user
+            - name: DB_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vet-db-external
+                  key: admin-password
+            - name: VET_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vet-db
+                  key: auth-password
+            - name: VET_CLINIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vet-db
+                  key: clinic-password
+            - name: VET_RESERVATION_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: vet-db
+                  key: reservation-password
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

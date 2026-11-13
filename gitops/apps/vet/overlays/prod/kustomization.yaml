@@ -1,0 +1,49 @@
+# prod: 승인된 버전만 반영하는 환경.
+#   - web 과 서비스 3개는 복제본 2개, 서로 다른 노드와 가용 영역에 나눈다
+#   - 배포나 노드 정비 중에도 최소 1개는 남긴다 (PodDisruptionBudget)
+#   - reservation 은 부하에 따라 2~4개로 늘어난다 (HorizontalPodAutoscaler)
+#   - DB 는 클러스터 바깥(RDS Multi-AZ)을 쓴다
+#   kubectl kustomize gitops/apps/vet/overlays/prod
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: prod
+
+resources:
+  - namespace.yaml
+  - ../../base
+  - pdb.yaml
+  - hpa.yaml
+
+# DB 를 고르는 한 줄이다.
+#   ../../components/db-external     바깥 DB (RDS). Secret vet-db-external 이 필요하다.
+#   ../../components/db-in-cluster   클러스터 안의 MySQL Pod. RDS 가 준비되지 않았을 때 이 줄로 바꾸면 dev 와 같은 방식으로 뜬다.
+components:
+  - ../../components/db-external
+
+replicas:
+  - name: web
+    count: 2
+  - name: auth
+    count: 2
+  - name: clinic
+    count: 2
+  - name: reservation
+    count: 2
+
+patches:
+  - path: spread.yaml
+
+# prod 에 배포할 버전. 태그를 직접 적어 고정한다. dev 의 값이 바뀌어도 여기는 그대로다.
+# 이 값을 바꾸는 커밋이 곧 "prod 배포 승인"이다.
+images:
+  - name: ghcr.io/9mkpark9/vet-web
+    newTag: 1.0.0-apache
+  - name: ghcr.io/9mkpark9/vet-auth
+    newTag: 1.0.0
+  - name: ghcr.io/9mkpark9/vet-clinic
+    newTag: 1.0.0
+  - name: ghcr.io/9mkpark9/vet-reservation
+    newTag: 1.0.0
+  - name: ghcr.io/9mkpark9/vet-db
+    newTag: 1.0.0

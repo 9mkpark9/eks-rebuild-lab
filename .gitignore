@@ -23,4 +23,5 @@ web/.impeccable/
 # 비밀 값
 .env
 .env.*
+*.env
 !.env.example

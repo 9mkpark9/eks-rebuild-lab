@@ -1,0 +1,6 @@
+# 서비스 이미지 빌드(위치: msa/)에 보내지 않는 것
+**/build/
+.gradle/
+**/Dockerfile
+web/
+db/
