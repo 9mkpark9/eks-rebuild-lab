@@ -19,8 +19,8 @@ function New-Secret {
 }
 
 $lines = Get-Content -LiteralPath $example -Encoding UTF8 | ForEach-Object {
-    if ($_ -match '^(DB_ROOT_PASSWORD|DB_PASSWORD|REDIS_PASSWORD)=\s*$') { "$($Matches[1])=$(New-Secret)" } else { $_ }
+    if ($_ -match '^(DB_ROOT_PASSWORD|DB_AUTH_PASSWORD|DB_CLINIC_PASSWORD|DB_RESERVATION_PASSWORD|REDIS_PASSWORD)=\s*$') { "$($Matches[1])=$(New-Secret)" } else { $_ }
 }
 # compose 는 BOM 이 붙은 .env 의 첫 줄을 읽지 못한다. BOM 없이 쓴다.
 [System.IO.File]::WriteAllLines($target, $lines, (New-Object System.Text.UTF8Encoding($false)))
-Write-Host '.env 를 만들었습니다 (비밀번호 3개를 무작위로 채움).'
+Write-Host '.env 를 만들었습니다 (비밀번호 5개를 무작위로 채움).'

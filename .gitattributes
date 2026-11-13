@@ -13,3 +13,4 @@ scripts/*.ps1       text eol=crlf
 msa/**/*.asis       text eol=lf
 .dockerignore       text eol=lf
 msa/.dockerignore   text eol=lf
+msa/**/*.sql        text eol=lf

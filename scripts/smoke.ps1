@@ -8,7 +8,8 @@
 # -Isolation  서비스 격리 확인(5번)에서 서비스를 멈추는 방법
 #               compose  docker compose stop/start (기본)
 #               k8s      kubectl scale --replicas=0/1
-#               none     5번을 건너뛴다
+#               none     5번과 DB 경계 확인을 건너뛴다
+# -NoDbCheck  DB 경계 확인만 건너뛴다 (DB 가 클러스터 밖의 RDS 라 mysql 컨테이너가 없을 때)
 # 끝나면 실패 수를 종료 코드로 돌려준다 (0 = 전부 통과).
 # 만든 예약은 스크립트가 취소하므로 여러 번 돌려도 된다.
 param(
@@ -16,6 +17,7 @@ param(
     [ValidateSet('compose', 'k8s', 'none')][string]$Isolation = 'compose',
     [string]$Namespace = 'dev',
     [string]$Password = 'test-only',      # README 의 테스트 계정 공통 비밀번호
+    [switch]$NoDbCheck,
     [int]$WaitSeconds = 180
 )
 
@@ -187,6 +189,29 @@ function Test-StatusRows([string]$label, [string]$stopped) {
     Report $ok "$label 상태 쪽지는 그 줄만 응답 없음" ($parts -join ', ')
 }
 
+# 서비스의 DB 계정으로 SQL 한 줄을 실행한다 (DB 컨테이너 안의 vet-sql). { Code, Text } 를 돌려준다.
+# SQL 에는 따옴표를 쓰지 않는다. PowerShell 5.1 이 외부 명령에 넘길 때 따옴표를 망가뜨린다.
+function Invoke-Db([string]$account, [string]$sql) {
+    Push-Location $root
+    try {
+        if ($Isolation -eq 'k8s') { $out = kubectl -n $Namespace exec deploy/mysql -- vet-sql $account $sql 2>&1 }
+        else { $out = docker compose exec -T mysql vet-sql $account $sql 2>&1 }
+        $text = (($out | ForEach-Object { "$_" }) -join ' ').Trim()
+        if ($text.Length -gt 90) { $text = $text.Substring(0, 90) + '…' }
+        return [pscustomobject]@{ Code = $LASTEXITCODE; Text = $text }
+    } finally { Pop-Location }
+}
+
+function Test-DbAllowed([string]$name, [string]$account, [string]$sql) {
+    $r = Invoke-Db $account $sql
+    Report ($r.Code -eq 0) $name ("vet_{0}: 허용됨 {1}" -f $account, $r.Text)
+}
+
+function Test-DbDenied([string]$name, [string]$account, [string]$sql) {
+    $r = Invoke-Db $account $sql
+    Report ($r.Code -ne 0 -and $r.Text -match 'denied|Unknown column') $name ("vet_{0}: {1}" -f $account, $(if ($r.Code -eq 0) { '허용됨 (막혀야 한다)' } else { $r.Text }))
+}
+
 Write-Host ("대상: {0}   격리 확인 방식: {1}" -f $BaseUrl, $Isolation)
 
 # ── 0. 준비: 어떤 순서로 떴든 전부 응답할 때까지 기다린다 ─────────────
@@ -265,6 +290,24 @@ foreach ($svc in 'auth', 'clinic', 'reservation') {
 }
 $page = Invoke-Api 'GET' '/status' $null ''
 Report ($page.Status -eq 200 -and $page.WebVersion) '상태 쪽지 화면 (/status)' ("{0}, web 버전 {1}, 응답 {2}" -f $page.Status, $page.WebVersion, $page.WebNode)
+
+# ── DB 경계: 서비스 계정은 자기 스키마만 쓰고, 남의 데이터는 뷰로 읽기만 한다 ──
+Write-Host ''
+Write-Host '== DB 경계 =='
+if ($Isolation -eq 'none' -or $NoDbCheck) {
+    Write-Host '건너뜀'
+} else {
+    Test-DbAllowed 'auth 가 자기 사용자 테이블 읽기' 'auth' 'SELECT COUNT(*) FROM users'
+    Test-DbDenied  'auth 가 예약 읽기' 'auth' 'SELECT COUNT(*) FROM vet_reservation.reservations'
+    Test-DbDenied  'clinic 이 사용자 읽기' 'clinic' 'SELECT COUNT(*) FROM vet_auth.users'
+    Test-DbDenied  'clinic 이 예약 지우기' 'clinic' 'DELETE FROM vet_reservation.reservations WHERE reservation_id = 0'
+    Test-DbAllowed 'reservation 이 뷰로 보호자 읽기' 'reservation' 'SELECT COUNT(*) FROM users'
+    Test-DbDenied  'reservation 이 비밀번호 해시 읽기 (뷰)' 'reservation' 'SELECT password_hash FROM users LIMIT 1'
+    Test-DbDenied  'reservation 이 사용자 원본 테이블 읽기' 'reservation' 'SELECT COUNT(*) FROM vet_auth.users'
+    Test-DbDenied  'reservation 이 반려동물 고치기' 'reservation' 'UPDATE pets SET age = age WHERE pet_id = 1'
+    Test-DbDenied  'reservation 이 진료 시각 고치기' 'reservation' 'UPDATE slots SET start_at = start_at WHERE slot_id = 1'
+    Test-DbDenied  'reservation 이 진료 시간 지우기' 'reservation' 'DELETE FROM slots WHERE slot_id = 0'
+}
 
 # ── 5. 서비스 격리: 하나가 멈춰도 다른 서비스 경로는 정상이어야 한다 ───
 Write-Host ''

@@ -12,10 +12,8 @@
 # 어떤 순서로 떠도 결국 정상이 되는지를 여기서도 같이 확인한다.
 name: vet
 
+# 세 서비스 공통. DB 는 서비스마다 스키마와 계정이 다르므로 각 서비스 항목에서 따로 준다.
 x-service-env: &service-env
-  SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vet?connectionTimeZone=LOCAL&characterEncoding=UTF-8
-  SPRING_DATASOURCE_USERNAME: vet_app
-  SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?.env 에 DB_PASSWORD 가 필요합니다}
   SPRING_DATA_REDIS_HOST: redis
   SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?.env 에 REDIS_PASSWORD 가 필요합니다}
   REDIS_TLS: "false"                      # 같은 네트워크 안의 Redis 라 TLS 없이 쓴다
@@ -56,7 +54,11 @@ services:
       dockerfile: auth-service/Dockerfile
       args:
         VERSION: ${VERSION:-1.0.0}
-    environment: *service-env
+    environment:
+      <<: *service-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vet_auth?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: vet_auth
+      SPRING_DATASOURCE_PASSWORD: ${DB_AUTH_PASSWORD:?.env 에 DB_AUTH_PASSWORD 가 필요합니다}
     mem_limit: 512m
     healthcheck: *service-health
 
@@ -67,7 +69,11 @@ services:
       dockerfile: clinic-service/Dockerfile
       args:
         VERSION: ${VERSION:-1.0.0}
-    environment: *service-env
+    environment:
+      <<: *service-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vet_clinic?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: vet_clinic
+      SPRING_DATASOURCE_PASSWORD: ${DB_CLINIC_PASSWORD:?.env 에 DB_CLINIC_PASSWORD 가 필요합니다}
     mem_limit: 512m
     healthcheck: *service-health
 
@@ -78,7 +84,11 @@ services:
       dockerfile: reservation-service/Dockerfile
       args:
         VERSION: ${VERSION:-1.0.0}
-    environment: *service-env
+    environment:
+      <<: *service-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vet_reservation?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: vet_reservation
+      SPRING_DATASOURCE_PASSWORD: ${DB_RESERVATION_PASSWORD:?.env 에 DB_RESERVATION_PASSWORD 가 필요합니다}
     mem_limit: 512m
     healthcheck: *service-health
 
@@ -89,16 +99,17 @@ services:
       dockerfile: msa/db/Dockerfile
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?.env 에 DB_ROOT_PASSWORD 가 필요합니다}
-      MYSQL_DATABASE: vet
-      MYSQL_USER: vet_app
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      # 서비스 계정 3개의 비밀번호. 초기화 스크립트(vet-provision)가 이 값으로 계정을 만든다.
+      VET_AUTH_PASSWORD: ${DB_AUTH_PASSWORD}
+      VET_CLINIC_PASSWORD: ${DB_CLINIC_PASSWORD}
+      VET_RESERVATION_PASSWORD: ${DB_RESERVATION_PASSWORD}
     # 볼륨 없이 메모리에만 둔다. 컨테이너를 다시 띄우면 스키마와 "오늘 기준" 시드로 돌아간다 (쿠버네티스의 emptyDir 와 같은 동작).
     tmpfs:
       - /var/lib/mysql
     mem_limit: 1g
     healthcheck:
-      # 초기화 중에는 TCP 를 열지 않으므로, TCP 로 시드 테이블이 읽히면 준비가 끝난 것이다
-      test: ["CMD-SHELL", "MYSQL_PWD=\"$$MYSQL_PASSWORD\" mysql -u\"$$MYSQL_USER\" --protocol=tcp --host=127.0.0.1 -N -e 'SELECT 1 FROM vet.users LIMIT 1' > /dev/null"]
+      # 초기화 중에는 TCP 를 열지 않으므로, 서비스 계정으로 TCP 접속해 시드가 읽히면 준비가 끝난 것이다
+      test: ["CMD", "vet-sql", "clinic", "SELECT 1 FROM vets LIMIT 1"]
       interval: 5s
       timeout: 3s
       retries: 30
