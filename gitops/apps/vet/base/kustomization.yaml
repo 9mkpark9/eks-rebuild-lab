@@ -1,0 +1,20 @@
+# 보듬 동물병원 — 환경과 무관한 바탕: web, 서비스 3개, redis
+# DB 는 여기에 없다. 환경마다 다르게 고른다:
+#   components/db-in-cluster   클러스터 안의 MySQL Pod (dev)
+#   components/db-external     바깥 DB, 예: RDS (prod)
+# 이미지 태그도 여기에 없다. 환경마다 overlays/<환경>/kustomization.yaml 의 images 한 곳에서 정한다.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - web.yaml
+  - auth.yaml
+  - clinic.yaml
+  - reservation.yaml
+  - redis.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: vet
+    includeSelectors: false
+    includeTemplates: true

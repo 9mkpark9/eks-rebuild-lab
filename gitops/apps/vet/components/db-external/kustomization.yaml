@@ -1,0 +1,17 @@
+# DB 를 클러스터 바깥에서 쓴다 (예: RDS Multi-AZ).
+#  - MySQL Pod 를 띄우지 않는다.
+#  - 서비스 3개의 DB_HOST 를 Secret(vet-db-external 의 host)에서 받는다.
+#  - 초기화 Job 이 바깥 DB 에 스키마, 시드, 서비스 계정을 만든다 (이미 있으면 건너뛴다).
+# 필요한 Secret: vet-db-external (host, admin-user, admin-password), vet-db (서비스 계정 비밀번호 3개)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+  - db-provision-job.yaml
+
+patches:
+  # 바탕의 env 첫 항목이 DB_HOST 다. 그 항목을 통째로 바꾼다.
+  - path: db-host-patch.yaml
+    target:
+      kind: Deployment
+      name: auth|clinic|reservation

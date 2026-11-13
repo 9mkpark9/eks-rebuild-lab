@@ -1,0 +1,10 @@
+# 서비스의 DB 주소를 Secret 에서 받게 바꾼다. 바깥 DB 의 주소는 Git 에 넣지 않는다.
+# kustomization.yaml 이 이 조각을 auth, clinic, reservation 세 Deployment 에 똑같이 적용한다.
+- op: replace
+  path: /spec/template/spec/containers/0/env/0
+  value:
+    name: DB_HOST
+    valueFrom:
+      secretKeyRef:
+        name: vet-db-external
+        key: host

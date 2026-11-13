@@ -1,0 +1,26 @@
+# 예약이 몰리면 reservation 만 늘린다. 서비스를 나눈 덕에 한 서비스만 따로 늘릴 수 있다.
+# CPU 요청량(100m) 대비 평균 사용률이 70% 를 넘으면 늘리고, 최소 2개 최대 4개다.
+#  - 지표 서버(metrics-server)가 있어야 동작한다. EKS 에서는 애드온으로 설치한다.
+#  - DB 연결: 가장 많을 때 auth 2 + clinic 2 + reservation 4 = Pod 8개 x DB_POOL_MAX 5 = 40. MySQL 한도 151 안에 든다.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: reservation
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: reservation
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    # 줄일 때는 5분 동안 지켜본 뒤 줄인다. 부하가 출렁일 때 늘렸다 줄였다를 반복하지 않게 한다.
+    scaleDown:
+      stabilizationWindowSeconds: 300

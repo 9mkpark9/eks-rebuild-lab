@@ -3,7 +3,7 @@
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1 -BaseUrl http://localhost:8088 -Isolation none
-#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1 -BaseUrl http://localhost:8088 -Isolation k8s -Namespace dev
+#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1 -BaseUrl http://localhost -Isolation k8s -Namespace dev
 #
 # -Isolation  서비스 격리 확인(5번)에서 서비스를 멈추는 방법
 #               compose  docker compose stop/start (기본)
@@ -38,6 +38,7 @@ $BaseUrl = $BaseUrl.TrimEnd('/')
 
 $script:pass = 0
 $script:fail = 0
+$script:savedReplicas = @{}
 
 function Report([bool]$ok, [string]$name, [string]$detail) {
     if ($ok) { $script:pass++; Write-Host ("[통과] {0} — {1}" -f $name, $detail) }
@@ -162,8 +163,14 @@ function Set-Service([string]$name, [bool]$running) {
         if ($Isolation -eq 'compose') {
             if ($running) { docker compose start $name 2>&1 | Out-Null } else { docker compose stop $name 2>&1 | Out-Null }
         } elseif ($Isolation -eq 'k8s') {
-            $replicas = 0; if ($running) { $replicas = 1 }
-            kubectl -n $Namespace scale "deployment/$name" "--replicas=$replicas" 2>&1 | Out-Null
+            # 멈출 때 원래 복제본 수를 적어 두고, 켤 때 그 수로 되돌린다 (prod 는 2개다)
+            if ($running) {
+                $count = $script:savedReplicas[$name]; if (-not $count) { $count = 1 }
+                kubectl -n $Namespace scale "deployment/$name" "--replicas=$count" 2>&1 | Out-Null
+            } else {
+                $script:savedReplicas[$name] = [int](kubectl -n $Namespace get "deployment/$name" -o "jsonpath={.spec.replicas}")
+                kubectl -n $Namespace scale "deployment/$name" "--replicas=0" 2>&1 | Out-Null
+            }
         }
     } finally { Pop-Location }
 }

@@ -1,0 +1,46 @@
+# 클러스터 안에서 web 에 요청을 계속 보내는 일회용 Pod (scripts\test-k8s-ops.ps1 이 쓴다).
+# 배포 중에 요청이 하나라도 실패하는지 세기 위한 것이다. Service 이름(web)으로 매번 새 연결을 맺으므로,
+# 내려가는 Pod 로 요청이 가면 실패로 잡힌다.
+# 이미지는 web 이미지를 그대로 쓴다. busybox 의 wget 이 들어 있고 노드에 이미 있다.
+# /tmp/stop 파일이 생기면 합계를 찍고 끝난다.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: loadgen
+  labels:
+    app: loadgen
+spec:
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 2
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: loadgen
+      image: ghcr.io/9mkpark9/vet-web:1.0.0-apache
+      command: ["sh", "-c"]
+      args:
+        - |
+          total=0; fail=0
+          while [ ! -f /tmp/stop ]; do
+            for p in /health / /api/notices /api/status/auth /api/status/clinic /api/status/reservation; do
+              total=$((total + 1))
+              if ! wget -q -T 3 -O /dev/null "http://web$p" 2> /tmp/err; then
+                fail=$((fail + 1))
+                echo "$(date +%T) FAIL $p $(tr '\n' ' ' < /tmp/err | cut -c1-90)"
+              fi
+            done
+          done
+          echo "RESULT total=$total fail=$fail"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 16Mi
+        limits:
+          cpu: 500m
+          memory: 64Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
