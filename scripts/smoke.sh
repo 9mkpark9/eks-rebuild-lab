@@ -19,7 +19,7 @@
 #                  none     5번을 건너뛴다               (서비스에 직접 요청할 때의 기본값)
 # --no-db-check  DB 경계 확인을 건너뛴다 (DB 가 클러스터 밖의 RDS 라 DB 컨테이너가 없을 때)
 # --db-exec CMD  DB 경계 확인에서 vet-sql 을 실행할 명령. 예: --db-exec "docker exec vet-apptest-mysql"
-# --db-target T  k8s 에서 DB 가 들어 있는 대상 (기본 deploy/mysql)
+# --db-target T  k8s 에서 vet-sql 을 실행할 대상. 기본은 app=mysql 라벨이 붙은 Pod 다
 # --mark         지우지 않는 예약을 하나 만들고 번호를 출력한다 (DB Pod 를 교체하기 전에)
 # --verify N     그 예약이 남아 있는지 확인한다 (DB Pod 를 교체한 뒤에). --cleanup 을 붙이면 확인 뒤 취소한다
 #
@@ -36,11 +36,11 @@ esac
 BASE_URL="${BASE_URL:-}"
 AUTH_URL=""; CLINIC_URL=""; RESERVATION_URL=""
 ISOLATION=""
-NAMESPACE="dev"
+NAMESPACE="vet"
 PASSWORD="test-only"          # README 의 테스트 계정 공통 비밀번호
 NO_DB_CHECK=0
 DB_EXEC=""
-DB_TARGET="deploy/mysql"
+DB_TARGET=""
 WAIT=180
 MODE="full"
 VERIFY_ID=""
@@ -281,7 +281,9 @@ DB_CODE=0; DB_TEXT=""
 db() {          # db 계정 SQL
     local out
     if [ -n "$DB_EXEC" ]; then out=$(MSYS_NO_PATHCONV=1 $DB_EXEC vet-sql "$1" "$2" 2>&1)
-    elif [ "$ISOLATION" = k8s ]; then out=$(MSYS_NO_PATHCONV=1 kubectl -n "$NAMESPACE" exec "$DB_TARGET" -- vet-sql "$1" "$2" 2>&1)
+    elif [ "$ISOLATION" = k8s ]; then
+        [ -n "$DB_TARGET" ] || DB_TARGET="pod/$(kubectl -n "$NAMESPACE" get pods -l app=mysql -o 'jsonpath={.items[0].metadata.name}' 2>/dev/null)"
+        out=$(MSYS_NO_PATHCONV=1 kubectl -n "$NAMESPACE" exec "$DB_TARGET" -- vet-sql "$1" "$2" 2>&1)
     else out=$(cd "$ROOT" && MSYS_NO_PATHCONV=1 docker compose exec -T mysql vet-sql "$1" "$2" 2>&1); fi
     DB_CODE=$?
     DB_TEXT=$(printf '%s' "$out" | tr '\r\n' '  ' | sed -e 's/  */ /g' -e 's/^ //' -e 's/ $//')

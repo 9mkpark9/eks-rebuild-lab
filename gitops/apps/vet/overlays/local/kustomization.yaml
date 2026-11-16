@@ -1,0 +1,19 @@
+# local: 내 PC 의 클러스터(Docker Desktop)에서 미리 돌려 볼 때 쓴다. 과제의 증거로 쓰는 환경이 아니다.
+# kubeadm 구성을 그대로 쓰고, 밖으로 여는 법만 바꾼다.
+#   Docker Desktop 은 NodePort 를 PC 로 열어 주지 않고 LoadBalancer 를 http://localhost 로 열어 준다.
+# 이미지는 레지스트리에서 받지 않고 노드에 미리 넣어 둔 것을 쓴다 (docs-msa/로컬실행.md).
+#   kubectl apply -k gitops/apps/vet/overlays/local
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../kubeadm
+
+patches:
+  - target:
+      kind: Service
+      name: web
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: LoadBalancer

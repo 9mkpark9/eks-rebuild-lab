@@ -1,5 +1,5 @@
 # 배포나 노드 정비(drain)로 Pod 를 내릴 때 최소 1개는 남긴다.
-# 과제 요구는 web 이고, 서비스 3개도 같은 이유로 넣었다.
+# web 과 서비스 3개 모두 복제본이 2개이므로, 하나를 내리는 것은 허용하고 둘을 한꺼번에 내리는 것은 막는다.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

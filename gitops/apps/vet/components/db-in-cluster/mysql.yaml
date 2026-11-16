@@ -1,21 +1,39 @@
-# mysql: 클러스터 안에서 도는 예약 DB (dev 용)
-# 디스크(PVC)를 붙이지 않는다. Pod 가 다시 뜨면 스키마, 그날 기준 시드, 서비스별 스키마·계정·뷰를 새로 만든다.
-#  - 얻는 것: EBS 드라이버가 필요 없고, 어느 노드·어느 가용 영역으로든 옮겨 갈 수 있다. 다시 만들면 늘 같은 초기 상태다.
-#  - 잃는 것: Pod 가 다시 뜨면 그동안의 예약이 사라진다. 데이터를 지켜야 하는 prod 는 바깥 DB 를 쓴다.
+# mysql: 클러스터 안에서 도는 예약 DB
+# Deployment 가 아니라 StatefulSet 으로 띄운다. Pod 를 지웠을 때 Deployment 는 옛 Pod 가 내려가는 중에 새 Pod 를 바로 띄워서
+# 두 MySQL 이 잠깐 같은 데이터 폴더를 잡는다. StatefulSet 은 옛 Pod(mysql-0)가 완전히 끝난 뒤에 같은 이름으로 다시 띄운다.
+# 데이터는 볼륨(PVC mysql-data)에 둔다. Pod 를 지우거나 교체해도 데이터가 남는다.
+#  - 처음 뜰 때(볼륨이 비어 있을 때)만 스키마, 그날 기준 시드, 서비스별 스키마·계정·뷰를 만든다.
+#  - 다시 뜰 때는 볼륨에 있는 데이터를 그대로 쓴다. 초기화는 다시 돌지 않는다.
+#  - 볼륨의 종류는 환경이 정한다. overlay 가 PVC 의 storageClassName 을 붙인다
+#    (kubeadm 은 노드의 디스크, EKS 는 EBS).
+#  - 서비스 계정의 비밀번호도 처음 뜰 때 Secret 의 값으로 정해진다. Secret 을 새로 만들었다면 볼륨도 새로 만들어야 맞는다.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  labels:
+    app: mysql
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mysql
   labels:
     app: mysql
 spec:
+  # DB 는 둘이 동시에 뜨면 안 된다. StatefulSet 은 같은 번호의 Pod 를 한 번에 하나만 둔다.
   replicas: 1
+  # StatefulSet 이 짝으로 요구하는 Service 의 이름 (아래의 mysql Service)
+  serviceName: mysql
   selector:
     matchLabels:
       app: mysql
-  # DB 는 둘이 동시에 뜨면 안 된다
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -27,10 +45,12 @@ spec:
         runAsNonRoot: true
         runAsUser: 999
         runAsGroup: 999
+        # 볼륨의 소유 그룹을 이 번호로 맞춰 mysql 사용자가 쓸 수 있게 한다
         fsGroup: 999
         seccompProfile:
           type: RuntimeDefault
-      # 노드가 죽으면 기본값(5분)을 기다리지 않고 30초 뒤 다른 노드에서 다시 뜬다
+      # 노드가 죽으면 기본값(5분)을 기다리지 않고 30초 뒤 Pod 를 내보낸다.
+      # 볼륨이 다른 노드로 따라갈 수 있을 때(EBS, 같은 가용 영역)만 다른 노드에서 다시 뜬다.
       tolerations:
         - key: node.kubernetes.io/not-ready
           operator: Exists
@@ -52,7 +72,7 @@ spec:
                     app: redis
       containers:
         - name: mysql
-          image: ghcr.io/9mkpark9/vet-db
+          image: vet-db
           ports:
             - name: mysql
               containerPort: 3306
@@ -110,10 +130,13 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/mysql
+              # 볼륨의 맨 위가 아니라 그 안의 폴더를 쓴다. EBS 처럼 새로 포맷한 디스크에는 lost+found 폴더가 있어서,
+              # 맨 위를 그대로 쓰면 MySQL 이 "데이터 폴더가 비어 있지 않다"며 초기화를 거부한다.
+              subPath: mysql
       volumes:
-        # Pod 와 수명이 같은 빈 폴더. PVC 가 아니다.
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: mysql-data
 ---
 apiVersion: v1
 kind: Service
@@ -122,6 +145,7 @@ metadata:
   labels:
     app: mysql
 spec:
+  # 클러스터 안에서만 보인다(ClusterIP). 밖에서는 DB 에 접속할 수 없다.
   selector:
     app: mysql
   ports:

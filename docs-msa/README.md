@@ -63,6 +63,6 @@
 | `msa/` | 서비스 3개(Gradle 멀티 모듈), Dockerfile, 웹 서버 설정, DB 초기화 |
 | `web/` | 소개 페이지와 예약 화면. 상태 쪽지와 버전 표시를 더했다 |
 | `db/` | 스키마와 시드 생성기. 고치지 않고 이미지가 복사해 쓴다 |
-| `scripts/` | `smoke.sh`(①②③④ 공통 테스트 시나리오, bash), Windows 용 `test-app.ps1`(①), `smoke.ps1`(②③④), `test-k8s-ops.ps1`(③④), `new-env.ps1`, `new-k8s-secrets.ps1` |
+| `scripts/` | `smoke.sh`(①②③④ 공통 테스트 시나리오, bash), Windows 용 `test-app.ps1`(①), `smoke.ps1`(②③④), `new-env.ps1`. bash: `test-k8s-ops.sh`(③④ 운영 동작), `new-k8s-secrets.sh`, `eks-apply.sh` |
 | `compose.yaml` | ② 의 실행 구성 |
-| `gitops/apps/vet/` | ③④ 의 배포 파일 (Kustomize: base, components, overlays/dev·prod) |
+| `gitops/` | ③④ 의 배포 파일 (Kustomize: base, components, overlays/kubeadm·eks·local) 과 클러스터 준비 파일. [gitops/README.md](../gitops/README.md) |
