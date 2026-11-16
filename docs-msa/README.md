@@ -52,7 +52,8 @@
 | [결정기록.md](결정기록.md) | 결정마다 확인한 사실 → 근거 → 그래서 이렇게 했다 → 검증 | "왜 그렇게 설정했나"에 답한다 |
 | [검토한-대안.md](검토한-대안.md) | 놓고 고른 선택지, 버린 이유, 다시 볼 조건, 실무와 다른 점 | "다른 방법은 생각해 봤나"에 답한다 |
 | [테스트-시나리오.md](테스트-시나리오.md) | 모든 단계에서 쓰는 확인 항목과 기대 결과, 단계별 실행 명령 | "같은 시나리오로 확인했나"에 답한다 |
-| [로컬실행.md](로컬실행.md) | 빌드, 실행, 검증 명령과 막힐 때 | 직접 따라 해 볼 때 |
+| [실행-안내-WSL.md](실행-안내-WSL.md) | ① ② 를 WSL 2 Ubuntu 에서 처음부터 따라 하는 순서, 워크로드 분석, Dockerfile 설명, 남길 증거 | 과제의 ① ② 를 실행할 때 |
+| [로컬실행.md](로컬실행.md) | Windows 에서의 빌드, 실행, 검증 명령과 막힐 때 | Windows 에서 개발할 때 |
 | [img/](img/) | 상태 쪽지와 예약 화면 캡처 | 발표 자료 |
 
 ## 저장소 구성
@@ -63,6 +64,6 @@
 | `msa/` | 서비스 3개(Gradle 멀티 모듈), Dockerfile, 웹 서버 설정, DB 초기화 |
 | `web/` | 소개 페이지와 예약 화면. 상태 쪽지와 버전 표시를 더했다 |
 | `db/` | 스키마와 시드 생성기. 고치지 않고 이미지가 복사해 쓴다 |
-| `scripts/` | `smoke.sh`(①②③④ 공통 테스트 시나리오, bash), Windows 용 `test-app.ps1`(①), `smoke.ps1`(②③④), `new-env.ps1`. bash: `test-k8s-ops.sh`(③④ 운영 동작), `new-k8s-secrets.sh`, `eks-apply.sh` |
+| `scripts/` | `smoke.sh`(①②③④ 공통 테스트 시나리오, bash), Windows 용 `test-app.ps1`(①), `smoke.ps1`(②③④), `new-env.ps1`. bash: `run-app.sh`(① 앱 실행), `new-env.sh`, `push-images.sh`(② ④ 이미지 올리기), `test-k8s-ops.sh`(③④ 운영 동작), `new-k8s-secrets.sh`, `eks-apply.sh` |
 | `compose.yaml` | ② 의 실행 구성 |
 | `gitops/` | ③④ 의 배포 파일 (Kustomize: base, components, overlays/kubeadm·eks·local) 과 클러스터 준비 파일. [gitops/README.md](../gitops/README.md) |

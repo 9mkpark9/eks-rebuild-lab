@@ -318,7 +318,7 @@ if [ "$MODE" = mark ]; then
     new_reservation "$WORK/mark.jar" "$pet" 2
     [ "$N_ID" -gt 0 ] || { echo "[실패] 예약 신청 — $(brief)"; exit 1; }
     echo "[통과] 표식 예약을 만들었다 — 번호 $N_ID, 날짜 $N_DATE, 보호자 $MARK_OWNER, 상태 REQUESTED, 처리 $R_SERVEDBY"
-    echo "DB Pod 를 교체한 뒤 확인: scripts/smoke.sh ... --verify $N_ID"
+    echo "다시 띄운 뒤 확인: 같은 명령에서 --mark 를 --verify $N_ID 로 바꾼다"
     exit 0
 fi
 

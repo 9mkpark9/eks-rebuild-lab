@@ -3,9 +3,10 @@
 #   docker build -f msa/db/Dockerfile -t ghcr.io/9mkpark9/vet-db:1.0.0 .
 #
 # 두 가지로 쓴다.
-#   1) DB 서버로 (compose, dev): 데이터 폴더가 비어 있으면 초기화 절차가 vet-provision 을 실행한다.
-#      볼륨을 붙이지 않으므로 컨테이너(Pod)가 다시 뜰 때마다 초기 상태로 돌아간다. 의도한 동작이다.
-#   2) 초기화 도구로 (prod 의 RDS): 같은 이미지를 `vet-provision` 명령으로 실행해 바깥 DB 를 초기화한다.
+#   1) DB 서버로: 데이터 폴더가 비어 있으면 초기화 절차가 vet-provision 을 실행한다.
+#      compose 에서는 볼륨을 붙이지 않아 컨테이너가 다시 뜰 때마다 초기 상태로 돌아간다.
+#      쿠버네티스에서는 볼륨(PVC)을 붙여 처음 한 번만 초기화하고 그 뒤로는 데이터를 그대로 쓴다.
+#   2) 초기화 도구로 (바깥 DB, 예: RDS): 같은 이미지를 `vet-provision` 명령으로 실행해 바깥 DB 를 초기화한다.
 
 # 시드 생성기(db/gen-seed.mjs)는 Node 로 돈다. 실행 파일 하나만 가져온다.
 FROM node:22-slim AS node

@@ -5,6 +5,9 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1
 #   docker compose down
 #
+# WSL 이나 Linux 에서는 같은 일을 bash 스크립트로 한다:
+#   scripts/new-env.sh && docker compose up -d --build && scripts/smoke.sh
+#
 # 비밀번호와 포트는 .env 에서 읽는다 (.env 는 커밋하지 않는다. 항목은 .env.example 참고).
 # WEB_SERVER=apache(기본) 또는 nginx 로 웹 서버를 고른다. 두 이미지는 같은 주소와 같은 응답을 낸다.
 #
