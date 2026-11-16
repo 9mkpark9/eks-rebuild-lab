@@ -3,6 +3,7 @@
 #   - DB 의 볼륨: EBS, StorageClass vet-ebs (kubeadm 은 노드의 디스크)
 #   - 이미지: ECR 에서 받는다 (kubeadm 은 ghcr.io)
 #   - web 의 종료 대기: 5초 → 15초. ALB 가 내려가는 Pod 를 대상에서 빼는 데 시간이 더 걸린다.
+#   - mysql, redis: Auto Mode 가 노드를 정리할 때 옮기지 않게 표시한다 (kubeadm 에는 그런 장치가 없다)
 #
 # 먼저 준비:  gitops/cluster/eks/ (StorageClass, IngressClass),  scripts/new-k8s-secrets.sh -n vet (Secret)
 # ECR 주소에는 AWS 계정 번호가 들어 있어 Git 에 적지 않는다. 아래 images 의 ECR_REGISTRY 는 자리 표시이고,
@@ -30,6 +31,11 @@ components:
 patches:
   - path: mysql-storage.yaml
   - path: web-prestop.yaml
+  # Pod 가 하나뿐인 mysql 과 redis 에 적용한다 (mysql 이 없으면 redis 에만 적용된다)
+  - path: no-disrupt.yaml
+    target:
+      kind: StatefulSet|Deployment
+      name: mysql|redis
 
 images:
   - name: vet-web

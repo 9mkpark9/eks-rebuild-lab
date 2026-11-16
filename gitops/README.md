@@ -38,6 +38,7 @@ gitops/
 | 이미지를 받는 곳 | `ghcr.io/9mkpark9/vet-*` | ECR (`<계정>.dkr.ecr.<리전>.amazonaws.com/vet-*`) | 과제가 ECR 로 옮기라고 한다. 노드가 별도 로그인 없이 받을 수 있다 |
 | redis 이미지 | `redis:7-alpine` (Docker Hub) | `public.ecr.aws/docker/library/redis:7-alpine` | Docker Hub 의 익명 내려받기 제한을 피한다. 같은 이미지다 |
 | web 의 종료 대기 | 5초 | 15초 | ALB 는 내려가는 Pod 를 대상에서 빼는 데 시간이 더 걸린다 |
+| mysql, redis 의 표시 | 없음 | `karpenter.sh/do-not-disrupt` | Auto Mode 는 덜 찬 노드를 스스로 정리한다. Pod 가 하나뿐인 둘은 옮기지 않게 한다 |
 | 적용 명령 | `kubectl apply -k` | `scripts/eks-apply.sh` | ECR 주소에 계정 번호가 들어 있어 Git 에 적지 않고 적용할 때 넣는다 |
 
 같은 것: Deployment 와 Service 의 내용, 프로브, 자원 요청, 복제본 수(2개), 분산 규칙, PDB, ConfigMap, Secret 의 이름과 키, MySQL 의 StatefulSet.

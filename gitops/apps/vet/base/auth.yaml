@@ -38,6 +38,9 @@ spec:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: DoNotSchedule
+          # Pod 를 놓을 수 없는 노드(컨트롤 플레인처럼 taint 가 붙은 노드)는 계산에서 뺀다.
+          # 기본값(Ignore)은 그런 노드도 'Pod 가 0개인 노드'로 세어서, 배포 중 한 개가 더 뜰 자리를 못 찾는다.
+          nodeTaintsPolicy: Honor
           labelSelector:
             matchLabels:
               app: auth
