@@ -86,9 +86,14 @@ scripts/test-k8s-ops.sh --base-url http://<ALB 주소> -n vet --compare
 
 ### 내 PC 에서 미리 돌려 보기
 
-`overlays/local` 은 kubeadm 구성에서 노출 방법만 LoadBalancer 로 바꾼 것이다. Docker Desktop 의 클러스터는 그것을 `http://localhost` 로 열어 준다. 이미지를 노드에 넣는 방법은 `docs-msa/로컬실행.md` 에 있다.
+`overlays/local` 은 kubeadm 구성에서 노출 방법만 LoadBalancer 로 바꾼 것이다. Docker Desktop 의 클러스터는 그것을 `http://localhost` 로 열어 준다. 이 클러스터의 노드는 내 PC 에서 만든 이미지를 보지 못하므로, 레지스트리에 올리지 않았다면 이미지를 노드에 직접 넣는다.
 
 ```bash
+# 이미지를 노드에 넣는다 (레지스트리에 올렸으면 건너뛴다)
+for i in vet-web:1.0.0-apache vet-auth:1.0.0 vet-clinic:1.0.0 vet-reservation:1.0.0 vet-db:1.0.0; do
+  docker save "ghcr.io/9mkpark9/$i" | docker exec -i desktop-control-plane ctr -n k8s.io images import -
+done
+
 docker exec desktop-control-plane mkdir -p /var/lib/vet-mysql
 kubectl label node desktop-control-plane vet-db=true
 kubectl apply -f gitops/cluster/kubeadm/
