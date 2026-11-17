@@ -12,6 +12,7 @@
 | ① ② 를 실행한다 (WSL 2 Ubuntu) | [실행-안내-WSL.md](실행-안내-WSL.md) |
 | ③ 을 실행한다 (EC2, kubeadm) | [실행-안내-kubeadm.md](실행-안내-kubeadm.md) |
 | ④ 를 실행한다 (EKS Auto Mode) | [실행-안내-EKS.md](실행-안내-EKS.md) |
+| 스크립트 없이 명령을 하나씩 직접 쳐 본다 (① ~ ④) | [직접-해보기.md](직접-해보기.md) |
 | 테스트 시나리오를 본다 | [테스트-시나리오.md](테스트-시나리오.md) |
 | 배포 파일의 구조와 kubeadm / EKS 의 차이를 본다 | [../gitops/README.md](../gitops/README.md) |
 
