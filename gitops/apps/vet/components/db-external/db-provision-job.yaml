@@ -7,10 +7,6 @@ metadata:
   name: db-provision
   labels:
     app: db-provision
-  annotations:
-    # Argo CD 를 쓸 때만 뜻이 있다: 동기화할 때마다 이전 Job 을 지우고 새로 만든다 (Job 은 고칠 수 없는 자원이다)
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 6
   # 끝난 Job 은 하루 뒤 정리된다
