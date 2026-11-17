@@ -9,7 +9,6 @@
 | [1-앱.md](1-앱.md) | 단일 WAS 를 서비스 3개로 나누고 jar 로 실행해 확인 (Windows) | 지금은 WSL 에서 `scripts/run-app.sh` 로 한다 |
 | [2-컨테이너.md](2-컨테이너.md) | 이미지 6개와 compose, Apache 와 nginx 비교, 자원 사용량 측정 (Windows, Docker Desktop) | 지금은 WSL 의 Docker Engine 에서 한다. 이미지와 compose 는 같다 |
 | [3-쿠버네티스.md](3-쿠버네티스.md) | dev / prod overlay 로 로컬 클러스터에서 확인 | overlay 가 `kubeadm` / `eks` 로 바뀌었고, MySQL 에 볼륨이 붙었고, 네임스페이스가 `vet` 이다 |
-| [4-EKS.md](4-EKS.md) | EKS 에서 확인할 것의 목록 (실행 전에 쓴 틀) | `실행-안내-EKS.md` 가 대신한다 |
 | [로컬실행.md](로컬실행.md) | Windows 에서의 빌드, compose, 상태 쪽지, 모의 서버 실행법 | compose 와 화면 부분은 지금도 맞다. 쿠버네티스 절은 예전 구성이다 |
 
 그때의 측정값 가운데 지금도 근거로 쓰는 것:
