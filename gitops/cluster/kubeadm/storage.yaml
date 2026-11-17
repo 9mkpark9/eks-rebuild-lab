@@ -1,0 +1,43 @@
+# kubeadm 클러스터에 한 번 준비하는 것: MySQL 데이터를 둘 볼륨
+# kubeadm 으로 만든 클러스터에는 볼륨을 자동으로 만들어 주는 장치가 없다. 그래서 노드 한 대의 디스크를 볼륨으로 직접 등록한다.
+#
+# 적용하기 전에 DB 를 둘 워커 노드 하나를 정해 두 가지를 한다.
+#   1) 그 노드에서:        sudo mkdir -p /var/lib/vet-mysql
+#   2) 컨트롤 플레인에서:  kubectl label node <노드 이름> vet-db=true
+# 그다음:                  kubectl apply -f gitops/cluster/kubeadm/
+#
+# 이 볼륨은 그 노드에만 있다. MySQL Pod 는 항상 그 노드에 뜨고, 그 노드가 죽으면 다른 노드로 옮겨 가지 못한다.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: vet-local
+# 자동으로 만들지 않는다. 아래의 PersistentVolume 을 직접 등록해 쓴다.
+provisioner: kubernetes.io/no-provisioner
+# Pod 가 놓일 노드가 정해진 뒤에 볼륨을 묶는다
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vet-mysql
+  labels:
+    app: mysql
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  # PVC 를 지워도 노드의 데이터는 지우지 않는다
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: vet-local
+  local:
+    path: /var/lib/vet-mysql
+  # vet-db=true 라벨이 붙은 노드에 있는 볼륨이다. 이 볼륨을 쓰는 Pod 는 그 노드에만 놓인다.
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: vet-db
+              operator: In
+              values: ["true"]

@@ -1,0 +1,9 @@
+# Pod 가 하나뿐인 mysql 과 redis 는 Auto Mode 가 노드를 정리할 때 옮기지 않게 한다.
+# Auto Mode 는 비용을 줄이려고 덜 찬 노드의 Pod 를 다른 노드로 옮기고 그 노드를 없앤다. 복제본이 2개인 web 과 서비스는
+# 하나씩 옮겨도 끊기지 않지만(PodDisruptionBudget), mysql 과 redis 는 옮기는 동안 DB 와 로그인이 끊긴다.
+# 이 표시가 있는 Pod 가 떠 있는 노드는 정리 대상에서 빠진다. (노드 고장으로 인한 교체까지 막지는 않는다.)
+# kubeadm 클러스터에는 노드를 스스로 정리하는 장치가 없어서 필요 없다.
+- op: add
+  path: /spec/template/metadata/annotations
+  value:
+    karpenter.sh/do-not-disrupt: "true"

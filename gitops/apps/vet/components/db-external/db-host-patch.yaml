@@ -1,6 +1,8 @@
-# 서비스의 DB 주소를 Secret 에서 받게 바꾼다. 바깥 DB 의 주소는 Git 에 넣지 않는다.
+# 서비스의 DB 주소를 Secret 에서 받게 한다. 바깥 DB 의 주소는 Git 에 넣지 않는다.
+# env 의 맨 앞에 DB_HOST 를 넣는다. env 의 값은 ConfigMap(envFrom)의 같은 이름 값을 덮어쓰고,
+# 뒤에 오는 SPRING_DATASOURCE_URL 의 $(DB_HOST) 가 이 값을 쓴다.
 # kustomization.yaml 이 이 조각을 auth, clinic, reservation 세 Deployment 에 똑같이 적용한다.
-- op: replace
+- op: add
   path: /spec/template/spec/containers/0/env/0
   value:
     name: DB_HOST

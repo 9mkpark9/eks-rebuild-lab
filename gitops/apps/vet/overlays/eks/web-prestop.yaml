@@ -1,0 +1,17 @@
+# web 이 내려갈 때 요청을 더 오래 받아 준다 (5초 → 15초).
+# kubeadm 에서는 kube-proxy 가 내려가는 Pod 를 1~2초 안에 뺀다. ALB 는 대상에서 빼라는 요청이 AWS 에 반영될 때까지
+# 그 Pod 로 계속 보내므로, 그동안 Pod 가 살아서 받아야 요청이 끊기지 않는다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  template:
+    spec:
+      terminationGracePeriodSeconds: 45
+      containers:
+        - name: web
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "15"]

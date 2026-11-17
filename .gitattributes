@@ -16,3 +16,4 @@ msa/.dockerignore   text eol=lf
 msa/**/*.sql        text eol=lf
 gitops/**/*.yaml    text eol=lf
 scripts/k8s/*.yaml  text eol=lf
+scripts/*.sh        text eol=lf

@@ -4,6 +4,8 @@
 문서 10.1의 `vet-web-<버전>.tar.gz`(= `web/dist/site` + `web/dist/app`)를 만드는 소스와,
 로컬에서 WAS 없이 돌려 볼 수 있는 모의 서버가 들어 있습니다.
 
+> **컨테이너 · Kubernetes 캡스톤**: 이 애플리케이션을 서비스 3개로 나눠 로컬 Docker → EC2 에 직접 만든 Kubernetes → EKS 로 옮긴 작업의 문서는 [docs-msa/README.md](docs-msa/README.md) 에서 시작합니다.
+
 | 문서의 요구 | 구현 위치 |
 |---|---|
 | 병원 소개·진료 시간·위치·의료진 — 정적 HTML을 nginx가 바로 응답 (2.2, 3.1) | `web/site` → `dist/site` |
@@ -74,7 +76,7 @@ npm start         # http://localhost:8090  (nginx 라우팅 + 모의 예약 API)
 `SLOT_TAKEN`(이미 예약된 시간 → 시간 목록 새로고침), `PET_SAME_DAY`(같은 반려동물·같은 날),
 `CANCELLED`, `NOT_REQUESTED`, 그리고 로그인 `429`(시도 제한)입니다.
 화면 하단에는 마지막 응답의 `X-Web-Node` / `X-Served-By`가 보여 분산을 눈으로 확인할 수 있습니다.
-컨테이너로 띄우면 버전(`X-Web-Version` / `X-App-Version`, 이미지 태그와 같은 값)도 함께 보입니다. 실행 방법은 [docs-msa/로컬실행.md](docs-msa/로컬실행.md)에 있습니다.
+컨테이너로 띄우면 버전(`X-Web-Version` / `X-App-Version`, 이미지 태그와 같은 값)도 함께 보입니다. 실행 방법은 [docs-msa/실행-안내-WSL.md](docs-msa/실행-안내-WSL.md)에 있습니다.
 
 ## API 규약
 

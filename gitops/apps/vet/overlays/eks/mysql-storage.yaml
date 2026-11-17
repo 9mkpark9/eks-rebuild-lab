@@ -1,0 +1,7 @@
+# MySQL 의 볼륨을 EBS 에서 받는다 (gitops/cluster/eks/storage.yaml 의 StorageClass)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+spec:
+  storageClassName: vet-ebs

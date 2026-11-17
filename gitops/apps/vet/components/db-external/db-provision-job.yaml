@@ -8,7 +8,7 @@ metadata:
   labels:
     app: db-provision
   annotations:
-    # Argo CD: 동기화할 때마다 이전 Job 을 지우고 새로 만든다 (Job 은 고칠 수 없는 자원이다)
+    # Argo CD 를 쓸 때만 뜻이 있다: 동기화할 때마다 이전 Job 을 지우고 새로 만든다 (Job 은 고칠 수 없는 자원이다)
     argocd.argoproj.io/hook: Sync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: provision
-          image: ghcr.io/9mkpark9/vet-db
+          image: vet-db
           command: ["vet-provision"]
           env:
             - name: DB_HOST

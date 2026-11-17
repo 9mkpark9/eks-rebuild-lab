@@ -3,7 +3,7 @@
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1 -BaseUrl http://localhost:8088 -Isolation none
-#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1 -BaseUrl http://localhost -Isolation k8s -Namespace dev
+#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\smoke.ps1 -BaseUrl http://localhost -Isolation k8s -Namespace vet
 #
 # -Isolation  서비스 격리 확인(5번)에서 서비스를 멈추는 방법
 #               compose  docker compose stop/start (기본)
@@ -15,7 +15,7 @@
 param(
     [string]$BaseUrl = '',
     [ValidateSet('compose', 'k8s', 'none')][string]$Isolation = 'compose',
-    [string]$Namespace = 'dev',
+    [string]$Namespace = 'vet',
     [string]$Password = 'test-only',      # README 의 테스트 계정 공통 비밀번호
     [switch]$NoDbCheck,
     [int]$WaitSeconds = 180
@@ -201,7 +201,7 @@ function Test-StatusRows([string]$label, [string]$stopped) {
 function Invoke-Db([string]$account, [string]$sql) {
     Push-Location $root
     try {
-        if ($Isolation -eq 'k8s') { $out = kubectl -n $Namespace exec deploy/mysql -- vet-sql $account $sql 2>&1 }
+        if ($Isolation -eq 'k8s') { $out = kubectl -n $Namespace exec mysql-0 -- vet-sql $account $sql 2>&1 }
         else { $out = docker compose exec -T mysql vet-sql $account $sql 2>&1 }
         $text = (($out | ForEach-Object { "$_" }) -join ' ').Trim()
         if ($text.Length -gt 90) { $text = $text.Substring(0, 90) + '…' }

@@ -7,11 +7,12 @@ metadata:
   labels:
     app: auth
 spec:
-  replicas: 1
+  # Pod 하나가 내려가도 다른 하나가 받는다
+  replicas: 2
   selector:
     matchLabels:
       app: auth
-  # 새 Pod 가 준비된 뒤에 옛 Pod 를 내린다. 복제본이 1개여도 배포 중에 끊기지 않는다.
+  # 새 Pod 가 준비된 뒤에 옛 Pod 를 내린다. 배포 중에도 준비된 Pod 수가 줄지 않는다.
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -30,39 +31,52 @@ spec:
         runAsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
+      # 복제본을 노드와 가용 영역에 나눈다.
+      #  - 노드: 한 노드에 몰리지 않게 강제한다. 노드가 1대뿐이면 조건이 저절로 맞아 배치된다.
+      #  - 가용 영역: 되도록 나눈다. 영역이 하나뿐인 클러스터에서도 배치가 막히지 않게 강제하지는 않는다.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          # Pod 를 놓을 수 없는 노드(컨트롤 플레인처럼 taint 가 붙은 노드)는 계산에서 뺀다.
+          # 기본값(Ignore)은 그런 노드도 'Pod 가 0개인 노드'로 세어서, 배포 중 한 개가 더 뜰 자리를 못 찾는다.
+          nodeTaintsPolicy: Honor
+          labelSelector:
+            matchLabels:
+              app: auth
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: auth
       containers:
         - name: auth
-          image: ghcr.io/9mkpark9/vet-auth
+          image: vet-auth
           ports:
             - name: http
               containerPort: 8080
+          # 설정(DB 주소, 연결 수, Redis 주소)은 ConfigMap 에서 통째로 받는다
+          envFrom:
+            - configMapRef:
+                name: vet-config
           env:
-            # DB 주소. 클러스터 안의 MySQL 이면 Service 이름, 바깥 DB(RDS)이면 Secret 에서 받는다(components/db-external).
-            - name: DB_HOST
-              value: mysql
-            # 서비스마다 자기 스키마에 자기 계정으로 접속한다
+            # 서비스마다 자기 스키마에 자기 계정으로 접속한다. $(DB_HOST) 는 위의 ConfigMap 값이다.
             - name: SPRING_DATASOURCE_URL
               value: jdbc:mysql://$(DB_HOST):3306/vet_auth?connectionTimeZone=LOCAL&characterEncoding=UTF-8
             - name: SPRING_DATASOURCE_USERNAME
               value: vet_auth
+            # 비밀번호는 Secret 에서 받는다
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: vet-db
                   key: auth-password
-            - name: SPRING_DATA_REDIS_HOST
-              value: redis
             - name: SPRING_DATA_REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: vet-redis
                   key: password
-            # 클러스터 안의 Redis 는 TLS 없이 쓴다
-            - name: REDIS_TLS
-              value: "false"
-            # 서비스 3개 x 복제본 수 x 이 값 이 MySQL 의 max_connections(151)보다 작아야 한다
-            - name: DB_POOL_MAX
-              value: "5"
           # /health 는 DB 를 보지 않는다. DB 가 늦게 떠도 Pod 는 준비되고, 그동안 API 는 503 JSON 을 돌려준다.
           # JVM 이 뜨는 동안에는 startupProbe 만 본다 (최대 2초 x 60번 = 120초).
           startupProbe:

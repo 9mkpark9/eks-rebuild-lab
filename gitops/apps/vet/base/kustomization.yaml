@@ -1,17 +1,21 @@
-# 보듬 동물병원 — 환경과 무관한 바탕: web, 서비스 3개, redis
-# DB 는 여기에 없다. 환경마다 다르게 고른다:
-#   components/db-in-cluster   클러스터 안의 MySQL Pod (dev)
-#   components/db-external     바깥 DB, 예: RDS (prod)
-# 이미지 태그도 여기에 없다. 환경마다 overlays/<환경>/kustomization.yaml 의 images 한 곳에서 정한다.
+# 보듬 동물병원 — 환경과 무관한 바탕: web, 서비스 3개, redis, 설정(ConfigMap), PodDisruptionBudget
+#
+# 여기에 없고 환경마다 정하는 것
+#   DB            components/db-in-cluster (클러스터 안의 MySQL Pod + 볼륨) 또는 components/db-external (바깥 DB, 예: RDS)
+#   밖으로 여는 법  overlays/<환경> 이 정한다 (kubeadm 은 NodePort, EKS 는 Ingress 로 ALB)
+#   이미지 주소·태그 overlays/<환경>/kustomization.yaml 의 images 한 곳에서 정한다. 여기에는 이름(vet-auth 등)만 있다.
+#   볼륨의 종류     overlays/<환경> 이 PVC 의 storageClassName 을 정한다
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  - config.yaml
   - web.yaml
   - auth.yaml
   - clinic.yaml
   - reservation.yaml
   - redis.yaml
+  - pdb.yaml
 
 labels:
   - pairs:

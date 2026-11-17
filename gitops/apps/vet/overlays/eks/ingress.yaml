@@ -1,0 +1,24 @@
+# web 을 ALB 로 연다. Auto Mode 가 이 Ingress 를 보고 ALB 를 만든다 (몇 분 걸린다).
+#   kubectl -n vet get ingress web      # ADDRESS 에 ALB 의 주소가 나온다
+# ALB 는 Pod 의 IP 로 바로 보낸다(대상 유형 ip, Auto Mode 의 기본값). 그래서 web 의 Service 는 ClusterIP 그대로다.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  labels:
+    app: web
+  annotations:
+    # ALB 가 Pod 가 살아 있는지 볼 때 쓰는 경로. readinessProbe 와 같은 경로다.
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+spec:
+  ingressClassName: vet-alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80
