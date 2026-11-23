@@ -1,0 +1,81 @@
+# auth 서비스. 세 서비스(auth, clinic, reservation)의 파일은 이름과 DB 스키마·계정만 다르다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  labels: { app: auth }
+spec:
+  replicas: 2                              # 하나가 내려가도 다른 하나가 받는다
+  selector: { matchLabels: { app: auth } }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }   # 새 Pod 가 준비된 뒤에 옛 Pod 를 내린다
+  template:
+    metadata:
+      labels: { app: auth }
+    spec:
+      terminationGracePeriodSeconds: 45    # preStop 5초 + 스프링이 처리 중인 요청을 마치는 시간
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      # 노드가 죽으면 기본값(300초)을 기다리지 않고 30초 뒤 다른 노드에서 다시 띄운다 (③ 문제)
+      tolerations:
+        - { key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+        - { key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+      topologySpreadConstraints:           # 복제본을 노드에 나눈다
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor          # Pod 를 놓을 수 없는 노드(컨트롤 플레인)는 세지 않는다
+          labelSelector: { matchLabels: { app: auth } }
+          # 같은 판(ReplicaSet)의 Pod 만 센다. 빼면 배포 중 내려갈 옛 Pod 까지 세어 둘이 한 노드에 몰린다 (③ 문제)
+          matchLabelKeys: [pod-template-hash]
+      containers:
+        - name: auth
+          image: vet2-auth
+          ports: [{ name: http, containerPort: 8080 }]
+          envFrom:
+            - configMapRef: { name: vet-config }
+          env:
+            - { name: SPRING_DATASOURCE_URL, value: "jdbc:mysql://$(DB_HOST):3306/vet_auth?connectionTimeZone=LOCAL&characterEncoding=UTF-8" }
+            - { name: SPRING_DATASOURCE_USERNAME, value: vet_auth }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: vet-db, key: auth-password } }
+            - name: SPRING_DATA_REDIS_PASSWORD
+              valueFrom: { secretKeyRef: { name: vet-redis, key: password } }
+          # /health 는 DB 와 Redis 를 보지 않는다 (① 7장). DB 가 죽어도 Pod 를 재시작하지 않는다.
+          startupProbe:                    # JVM 이 뜨는 동안은 이것만 본다 (최대 2초 x 60 = 120초)
+            httpGet: { path: /health, port: http }
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:                  # 준비가 된 뒤에만 Service 가 요청을 보낸다
+            httpGet: { path: /health, port: http }
+            periodSeconds: 5
+            failureThreshold: 2
+          livenessProbe:                   # 30초 동안 응답이 없으면 다시 띄운다
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          lifecycle:
+            preStop:                       # Service 에서 빠진 것이 퍼질 시간을 준 뒤 종료 신호를 받는다
+              exec: { command: ["sleep", "5"] }
+          resources:                       # ② 6.4: 평소 181 ~ 206MiB
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "1", memory: 384Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }   # 톰캣의 작업 폴더
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  labels: { app: auth }
+spec:
+  selector: { app: auth }
+  ports: [{ name: http, port: 8080, targetPort: http }]

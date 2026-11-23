@@ -1,0 +1,76 @@
+# mysql: 예약 데이터. 처음 뜰 때(볼륨이 비어 있을 때)만 스키마·시드·계정을 만들고, 그 뒤로는 볼륨의 데이터를 그대로 쓴다 (② C-8).
+# Deployment 가 아니라 StatefulSet: 같은 이름(mysql-0)의 Pod 를 한 번에 하나만 두고, 옛 Pod 가 완전히 끝난 뒤 다시 띄운다.
+# 볼륨의 종류(StorageClass)는 overlay 가 정한다. 정하지 않으면 클러스터의 기본값을 쓴다.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  labels: { app: mysql }
+spec:
+  serviceName: mysql
+  replicas: 1
+  selector: { matchLabels: { app: mysql } }
+  template:
+    metadata:
+      labels: { app: mysql }
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999                     # 공식 이미지의 mysql 사용자
+        runAsGroup: 999
+        fsGroup: 999                       # 볼륨을 mysql 사용자가 쓸 수 있게 한다
+        seccompProfile: { type: RuntimeDefault }
+      # 노드가 죽으면 기본값(300초)을 기다리지 않고 30초 뒤 다른 노드에서 다시 띄운다 (③ 문제)
+      tolerations:
+        - { key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+        - { key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+      containers:
+        - name: mysql
+          image: vet2-db
+          ports: [{ name: mysql, containerPort: 3306 }]
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: vet-db, key: root-password } }
+            - name: DB_AUTH_PASSWORD
+              valueFrom: { secretKeyRef: { name: vet-db, key: auth-password } }
+            - name: DB_CLINIC_PASSWORD
+              valueFrom: { secretKeyRef: { name: vet-db, key: clinic-password } }
+            - name: DB_RESERVATION_PASSWORD
+              valueFrom: { secretKeyRef: { name: vet-db, key: reservation-password } }
+          # TCP 로, 서비스 계정으로 시드를 읽어야 준비된 것이다 (① W-2, ② C-8)
+          startupProbe:
+            exec: { command: ["sh", "-c", "MYSQL_PWD=\"$DB_CLINIC_PASSWORD\" mysql -h127.0.0.1 -uvet_clinic -e 'SELECT 1 FROM vet_clinic.vets LIMIT 1'"] }
+            periodSeconds: 3
+            timeoutSeconds: 3
+            failureThreshold: 60
+          readinessProbe:
+            exec: { command: ["sh", "-c", "MYSQL_PWD=\"$DB_CLINIC_PASSWORD\" mysql -h127.0.0.1 -uvet_clinic -e 'SELECT 1 FROM vet_clinic.vets LIMIT 1'"] }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            tcpSocket: { port: mysql }
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:                       # ② 6.4: 446 ~ 460MiB
+            requests: { cpu: 100m, memory: 512Mi }
+            limits: { cpu: "1", memory: 1Gi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/mysql }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: { requests: { storage: 2Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels: { app: mysql }
+spec:
+  selector: { app: mysql }
+  ports: [{ name: mysql, port: 3306, targetPort: mysql }]

@@ -1,0 +1,20 @@
+# kubeadm 이 설치한 CoreDNS(클러스터 DNS)를 노드에 나눠 두고, 노드가 죽으면 30초 뒤 옮기게 한다.
+# kubeadm 의 기본값은 "되도록 나눈다"(preferred) 라서, 워커가 하나만 준비됐을 때 둘 다 한 노드에 놓였다.
+# 그 노드가 죽자 클러스터 전체의 이름 찾기가 멈췄다 (③ 문제). DB 를 쓰지 않는 요청까지 모두 실패했다.
+#   kubectl -n kube-system patch deploy coredns --patch-file v2/k8s/cluster/kubeadm/coredns-patch.yaml
+#   kubectl -n kube-system rollout restart deploy coredns      (이미 떠 있는 것을 다시 배치)
+spec:
+  template:
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector: { matchLabels: { k8s-app: kube-dns } }
+          matchLabelKeys: [pod-template-hash]
+      tolerations:
+        - { key: CriticalAddonsOnly, operator: Exists }
+        - { key: node-role.kubernetes.io/control-plane, effect: NoSchedule }
+        - { key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+        - { key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }

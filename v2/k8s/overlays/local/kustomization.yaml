@@ -1,0 +1,22 @@
+# local: 이 PC 의 클러스터(Docker Desktop). AWS 에 올리기 전에 미리 돌려 보는 용도다.
+# 이미지는 PC 의 도커에 있는 것을 그대로 쓴다. 볼륨은 클러스터의 기본 StorageClass(standard)에서 받는다.
+#   v2/k8s/secrets.sh -n vet2 --context docker-desktop
+#   kubectl --context docker-desktop apply -k v2/k8s/overlays/local
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: vet2
+resources:
+  - namespace.yaml
+  - ../../base
+patches:
+  # Docker Desktop 은 LoadBalancer 를 localhost 로 열어 준다
+  - target: { kind: Service, name: web }
+    patch: |-
+      - { op: replace, path: /spec/type, value: LoadBalancer }
+      - { op: replace, path: /spec/ports/0/port, value: 28080 }
+images:
+  - { name: vet2-web, newTag: 1.0.0 }
+  - { name: vet2-auth, newTag: 1.0.0 }
+  - { name: vet2-clinic, newTag: 1.0.0 }
+  - { name: vet2-reservation, newTag: 1.0.0 }
+  - { name: vet2-db, newTag: 1.0.0 }

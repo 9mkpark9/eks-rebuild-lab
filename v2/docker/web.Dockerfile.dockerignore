@@ -1,0 +1,6 @@
+# web 이미지에 필요한 것만 보낸다: web/ 의 소스와 Apache 설정
+*
+!web
+web/node_modules
+web/dist
+!v2/docker/web

@@ -1,0 +1,8 @@
+# db 이미지에 필요한 것만 보낸다
+*
+!db/schema.sql
+!db/gen-seed.mjs
+!web/clinic.config.json
+!msa/db/split.sql
+!msa/db/grants.sql
+!v2/docker/db

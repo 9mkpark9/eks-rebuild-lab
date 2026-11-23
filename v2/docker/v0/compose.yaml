@@ -1,0 +1,46 @@
+# v0 — 가장 단순한 형태
+#   docker compose -f v2/docker/v0/compose.yaml --env-file v2/_run/secrets.env up -d --build
+#   MYSQL_CONTAINER=v2-mysql-1 v2/workload/db-init.sh        (DB 는 띄운 뒤 손으로 초기화한다)
+name: v2
+services:
+  web:
+    image: vet2-web:v0
+    build: { context: ../../.., dockerfile: v2/docker/v0/web.Dockerfile }
+    ports: ["28080:80"]
+  auth:
+    image: vet2-auth:v0
+    build: { context: ../../../msa, dockerfile: ../v2/docker/v0/service-1.Dockerfile, args: { SERVICE: auth } }
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vet_auth?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: vet_auth
+      SPRING_DATASOURCE_PASSWORD: ${DB_AUTH_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_TLS: "false"
+  clinic:
+    image: vet2-clinic:v0
+    build: { context: ../../../msa, dockerfile: ../v2/docker/v0/service-1.Dockerfile, args: { SERVICE: clinic } }
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vet_clinic?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: vet_clinic
+      SPRING_DATASOURCE_PASSWORD: ${DB_CLINIC_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_TLS: "false"
+  reservation:
+    image: vet2-reservation:v0
+    build: { context: ../../../msa, dockerfile: ../v2/docker/v0/service-1.Dockerfile, args: { SERVICE: reservation } }
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/vet_reservation?connectionTimeZone=LOCAL&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: vet_reservation
+      SPRING_DATASOURCE_PASSWORD: ${DB_RESERVATION_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_TLS: "false"
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD}

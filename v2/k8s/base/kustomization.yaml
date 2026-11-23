@@ -1,0 +1,25 @@
+# 보듬 동물병원 — 환경과 무관한 바탕.
+# 환경마다 다른 것(네임스페이스, 이미지 주소, 밖으로 여는 법, 볼륨 종류)은 overlays/ 가 정한다.
+# 비밀번호(Secret vet-db, vet-redis)는 여기에 없다. v2/k8s/secrets.sh 로 클러스터에 직접 넣는다.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - web.yaml
+  - auth.yaml
+  - clinic.yaml
+  - reservation.yaml
+  - mysql.yaml
+  - redis.yaml
+  - pdb.yaml
+# 비밀이 아닌 설정. 이름 끝에 내용의 해시가 붙어서, 값을 바꾸면 그것을 쓰는 Pod 가 새로 뜬다.
+configMapGenerator:
+  - name: vet-config
+    literals:
+      - DB_HOST=mysql
+      # 서비스 3개 x 복제본 2 x 5 = 30, 배포 중 1개씩 더 떠도 45 (MySQL 한도 151)
+      - DB_POOL_MAX=5
+      - SPRING_DATA_REDIS_HOST=redis
+      - REDIS_TLS=false
+labels:
+  - pairs: { app.kubernetes.io/part-of: vet }
+    includeSelectors: false

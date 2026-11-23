@@ -1,0 +1,20 @@
+# 노드 정비(drain) 등으로 Pod 를 내보낼 때 최소 1개는 남긴다. 복제본이 2개인 넷에만 둔다.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: web }
+spec: { minAvailable: 1, selector: { matchLabels: { app: web } } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: auth }
+spec: { minAvailable: 1, selector: { matchLabels: { app: auth } } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: clinic }
+spec: { minAvailable: 1, selector: { matchLabels: { app: clinic } } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: { name: reservation }
+spec: { minAvailable: 1, selector: { matchLabels: { app: reservation } } }

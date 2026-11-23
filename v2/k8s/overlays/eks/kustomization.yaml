@@ -1,0 +1,43 @@
+# eks: EKS Auto Mode. kubeadm 과 다른 것은 이 폴더에 있는 것이 전부다.
+#   - 밖으로 여는 법: Ingress → ALB (kubeadm 은 NodePort)
+#   - MySQL 볼륨: EBS (StorageClass vet2-ebs, v2/k8s/cluster/eks/storage.yaml)
+#   - 이미지: ECR. 노드가 IAM 역할로 받으므로 ECR 로그인 Secret 이 필요 없다
+# ECR_REGISTRY 와 MY_CIDR 은 적용할 때 v2/k8s/apply.sh 가 실제 값으로 바꿔 넣는다 (계정 번호와 IP 를 Git 에 적지 않는다).
+#   v2/k8s/apply.sh eks
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: vet2
+resources:
+  - namespace.yaml
+  - ../../base
+  - ingress.yaml
+patches:
+  - target: { kind: StatefulSet, name: mysql }
+    patch: |-
+      - { op: add, path: /spec/volumeClaimTemplates/0/spec/storageClassName, value: vet2-ebs }
+  # 복제본이 있는 넷: 노드가 1대뿐이어도 2대로 나누게 하고(minDomains), 가용 영역도 나눈다 (④ 문제).
+  # Auto Mode 는 Pod 가 한 노드에 다 들어가면 노드를 줄여 몰아넣는다. minDomains 가 없으면 노드 1대에서도 규칙이 지켜진 것으로 본다.
+  # (로컬 클러스터는 노드가 1대라 base 에 넣지 않았다)
+  - target: { kind: Deployment, name: web|auth|clinic|reservation }
+    patch: |-
+      - { op: add, path: /spec/template/spec/topologySpreadConstraints/0/minDomains, value: 2 }
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints/-
+        value:
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          minDomains: 2
+          matchLabelKeys: [pod-template-hash]
+          labelSelector: { matchExpressions: [{ key: app, operator: Exists }] }
+  # 복제본이 하나뿐인 mysql 과 redis 는 Auto Mode 가 노드를 정리할 때 옮기지 않게 한다.
+  # 옮기면 그동안 DB 와 로그인이 끊긴다. (예방이다. 정리 때문에 옮겨지는 것을 이번에 관찰하지는 못했다)
+  - target: { kind: StatefulSet|Deployment, name: mysql|redis }
+    patch: |-
+      - { op: add, path: /spec/template/metadata/annotations, value: { karpenter.sh/do-not-disrupt: "true" } }
+images:
+  - { name: vet2-web, newName: ECR_REGISTRY/vet2-web, newTag: 1.0.0 }
+  - { name: vet2-auth, newName: ECR_REGISTRY/vet2-auth, newTag: 1.0.0 }
+  - { name: vet2-clinic, newName: ECR_REGISTRY/vet2-clinic, newTag: 1.0.0 }
+  - { name: vet2-reservation, newName: ECR_REGISTRY/vet2-reservation, newTag: 1.0.0 }
+  - { name: vet2-db, newName: ECR_REGISTRY/vet2-db, newTag: 1.0.0 }

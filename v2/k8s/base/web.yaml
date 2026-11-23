@@ -1,0 +1,67 @@
+# web: 화면 + /api 를 세 서비스로 나눠 보내는 Apache httpd. 밖으로 여는 법은 overlay 가 정한다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels: { app: web }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: web } }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  template:
+    metadata:
+      labels: { app: web }
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      # 노드가 죽으면 기본값(300초)을 기다리지 않고 30초 뒤 다른 노드에서 다시 띄운다 (③ 문제)
+      tolerations:
+        - { key: node.kubernetes.io/not-ready, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+        - { key: node.kubernetes.io/unreachable, operator: Exists, effect: NoExecute, tolerationSeconds: 30 }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          nodeTaintsPolicy: Honor
+          labelSelector: { matchLabels: { app: web } }
+          # 같은 판(ReplicaSet)의 Pod 만 센다. 빼면 배포 중 내려갈 옛 Pod 까지 세어 둘이 한 노드에 몰린다 (③ 문제)
+          matchLabelKeys: [pod-template-hash]
+      containers:
+        - name: web
+          image: vet2-web
+          ports: [{ name: http, containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 5
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec: { command: ["sleep", "5"] }
+          resources:                       # ② 6.4: 11 ~ 15MiB
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { cpu: 500m, memory: 64Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }   # PID 파일
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels: { app: web }
+spec:
+  selector: { app: web }
+  ports: [{ name: http, port: 80, targetPort: http }]

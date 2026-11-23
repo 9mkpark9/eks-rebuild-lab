@@ -1,0 +1,15 @@
+# EKS Auto Mode 에 한 번 준비하는 것: Ingress 를 보고 ALB 를 만들게 하는 IngressClass.
+# Auto Mode 에는 로드밸런서 기능이 들어 있지만, 어떤 Ingress 를 맡을지 알려 주는 IngressClass 는 직접 만들어야 한다.
+#   kubectl apply -f v2/k8s/cluster/eks/alb.yaml
+apiVersion: eks.amazonaws.com/v1
+kind: IngressClassParams
+metadata: { name: vet2-alb }
+spec:
+  scheme: internet-facing        # 기본값은 VPC 안에서만 보이는 internal
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata: { name: vet2-alb }
+spec:
+  controller: eks.amazonaws.com/alb
+  parameters: { apiGroup: eks.amazonaws.com, kind: IngressClassParams, name: vet2-alb }
