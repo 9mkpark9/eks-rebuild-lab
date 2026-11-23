@@ -1,7 +1,0 @@
-# MySQL 의 볼륨을 노드의 디스크에서 받는다 (gitops/cluster/kubeadm/storage.yaml 이 등록한 볼륨)
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: mysql-data
-spec:
-  storageClassName: vet-local
