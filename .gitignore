@@ -19,6 +19,7 @@ _run/
 # 도구 캐시 — 로컬 경로가 들어 있다
 .impeccable/
 web/.impeccable/
+.ua/
 
 # 비밀 값
 .env
