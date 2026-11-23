@@ -5,11 +5,14 @@
 #   kubectl apply -f v2/_run/3-k8s/v0-rendered.yaml
 apiVersion: v1
 kind: Namespace
-metadata: { name: vet2 }
+metadata:
+  name: vet2
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: mysql, namespace: vet2 }
+metadata:
+  name: mysql
+  namespace: vet2
 spec:
   selector: { matchLabels: { app: mysql } }
   template:
@@ -22,18 +25,25 @@ spec:
             - { name: MYSQL_ROOT_PASSWORD, value: "${DB_ROOT_PASSWORD}" }
             - { name: DB_AUTH_PASSWORD, value: "${DB_AUTH_PASSWORD}" }
             - { name: DB_CLINIC_PASSWORD, value: "${DB_CLINIC_PASSWORD}" }
-            - { name: DB_RESERVATION_PASSWORD, value: "${DB_RESERVATION_PASSWORD}" }
+            - {
+                name: DB_RESERVATION_PASSWORD,
+                value: "${DB_RESERVATION_PASSWORD}",
+              }
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: mysql, namespace: vet2 }
+metadata:
+  name: mysql
+  namespace: vet2
 spec:
   selector: { app: mysql }
   ports: [{ port: 3306 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: redis, namespace: vet2 }
+metadata:
+  name: redis
+  namespace: vet2
 spec:
   selector: { matchLabels: { app: redis } }
   template:
@@ -46,7 +56,9 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: redis, namespace: vet2 }
+metadata:
+  name: redis
+  namespace: vet2
 spec:
   selector: { app: redis }
   ports: [{ port: 6379 }]
@@ -63,7 +75,10 @@ spec:
         - name: auth
           image: vet2-auth:1.0.0
           env:
-            - { name: SPRING_DATASOURCE_URL, value: "jdbc:mysql://mysql:3306/vet_auth?connectionTimeZone=LOCAL&characterEncoding=UTF-8" }
+            - {
+                name: SPRING_DATASOURCE_URL,
+                value: "jdbc:mysql://mysql:3306/vet_auth?connectionTimeZone=LOCAL&characterEncoding=UTF-8",
+              }
             - { name: SPRING_DATASOURCE_USERNAME, value: vet_auth }
             - { name: SPRING_DATASOURCE_PASSWORD, value: "${DB_AUTH_PASSWORD}" }
             - { name: SPRING_DATA_REDIS_HOST, value: redis }
@@ -72,14 +87,18 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: auth, namespace: vet2 }
+metadata:
+  name: auth
+  namespace: vet2
 spec:
   selector: { app: auth }
   ports: [{ port: 8080 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: clinic, namespace: vet2 }
+metadata:
+  name: clinic
+  namespace: vet2
 spec:
   selector: { matchLabels: { app: clinic } }
   template:
@@ -89,23 +108,33 @@ spec:
         - name: clinic
           image: vet2-clinic:1.0.0
           env:
-            - { name: SPRING_DATASOURCE_URL, value: "jdbc:mysql://mysql:3306/vet_clinic?connectionTimeZone=LOCAL&characterEncoding=UTF-8" }
+            - {
+                name: SPRING_DATASOURCE_URL,
+                value: "jdbc:mysql://mysql:3306/vet_clinic?connectionTimeZone=LOCAL&characterEncoding=UTF-8",
+              }
             - { name: SPRING_DATASOURCE_USERNAME, value: vet_clinic }
-            - { name: SPRING_DATASOURCE_PASSWORD, value: "${DB_CLINIC_PASSWORD}" }
+            - {
+                name: SPRING_DATASOURCE_PASSWORD,
+                value: "${DB_CLINIC_PASSWORD}",
+              }
             - { name: SPRING_DATA_REDIS_HOST, value: redis }
             - { name: SPRING_DATA_REDIS_PASSWORD, value: "${REDIS_PASSWORD}" }
             - { name: REDIS_TLS, value: "false" }
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: clinic, namespace: vet2 }
+metadata:
+  name: clinic
+  namespace: vet2
 spec:
   selector: { app: clinic }
   ports: [{ port: 8080 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: reservation, namespace: vet2 }
+metadata:
+  name: reservation
+  namespace: vet2
 spec:
   selector: { matchLabels: { app: reservation } }
   template:
@@ -115,23 +144,34 @@ spec:
         - name: reservation
           image: vet2-reservation:1.0.0
           env:
-            - { name: SPRING_DATASOURCE_URL, value: "jdbc:mysql://mysql:3306/vet_reservation?connectionTimeZone=LOCAL&characterEncoding=UTF-8" }
+            - {
+                name: SPRING_DATASOURCE_URL,
+                value: "jdbc:mysql://mysql:3306/vet_reservation?connectionTimeZone=LOCAL&characterEncoding=UTF-8",
+              }
             - { name: SPRING_DATASOURCE_USERNAME, value: vet_reservation }
-            - { name: SPRING_DATASOURCE_PASSWORD, value: "${DB_RESERVATION_PASSWORD}" }
+            - {
+                name: SPRING_DATASOURCE_PASSWORD,
+                value: "${DB_RESERVATION_PASSWORD}",
+              }
             - { name: SPRING_DATA_REDIS_HOST, value: redis }
             - { name: SPRING_DATA_REDIS_PASSWORD, value: "${REDIS_PASSWORD}" }
             - { name: REDIS_TLS, value: "false" }
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: reservation, namespace: vet2 }
+metadata:
+  name: reservation
+  namespace: vet2
 spec:
-  selector: { app: reservation }
+  selector:
+    app: reservation
   ports: [{ port: 8080 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: web, namespace: vet2 }
+metadata:
+  name: web
+  namespace: vet2
 spec:
   selector: { matchLabels: { app: web } }
   template:
@@ -144,7 +184,9 @@ spec:
 # 이 PC 의 클러스터(Docker Desktop)는 LoadBalancer 를 localhost 로 열어 준다
 apiVersion: v1
 kind: Service
-metadata: { name: web, namespace: vet2 }
+metadata:
+  name: web
+  namespace: vet2
 spec:
   type: LoadBalancer
   selector: { app: web }

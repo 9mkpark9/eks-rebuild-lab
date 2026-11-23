@@ -4,10 +4,13 @@
 #   kubectl apply -f v2/k8s/cluster/eks/storage.yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
-metadata: { name: vet2-ebs }
+metadata:
+  name: vet2-ebs
 provisioner: ebs.csi.eks.amazonaws.com
 # Pod 가 놓일 노드(가용 영역)가 정해진 뒤에 그 영역에 볼륨을 만든다. EBS 는 한 영역 안에서만 붙는다.
 volumeBindingMode: WaitForFirstConsumer
 # PVC 를 지우면 EBS 도 지운다. 남겨 두면 요금이 계속 나간다.
 reclaimPolicy: Delete
-parameters: { type: gp3, encrypted: "true" }
+parameters:
+  type: gp3
+  encrypted: "true"

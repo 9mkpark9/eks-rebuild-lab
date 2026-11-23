@@ -10,7 +10,9 @@ resources:
   - ../../base
 patches:
   # 로드밸런서를 만들어 주는 장치가 없으므로 노드의 포트를 직접 연다: http://<노드의 공인 IP>:30080
-  - target: { kind: Service, name: web }
+  - target:
+      kind: Service
+      name: web
     patch: |-
       - { op: replace, path: /spec/type, value: NodePort }
       - { op: add, path: /spec/ports/0/nodePort, value: 30080 }
@@ -22,5 +24,9 @@ images:
   - { name: vet2-web, newName: ECR_REGISTRY/vet2-web, newTag: 1.0.0 }
   - { name: vet2-auth, newName: ECR_REGISTRY/vet2-auth, newTag: 1.0.0 }
   - { name: vet2-clinic, newName: ECR_REGISTRY/vet2-clinic, newTag: 1.0.0 }
-  - { name: vet2-reservation, newName: ECR_REGISTRY/vet2-reservation, newTag: 1.0.0 }
+  - {
+      name: vet2-reservation,
+      newName: ECR_REGISTRY/vet2-reservation,
+      newTag: 1.0.0,
+    }
   - { name: vet2-db, newName: ECR_REGISTRY/vet2-db, newTag: 1.0.0 }

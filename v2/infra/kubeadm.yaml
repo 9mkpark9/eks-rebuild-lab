@@ -1,0 +1,117 @@
+AWSTemplateFormatVersion: "2010-09-09"
+# 스택 3: kubeadm 클러스터의 EC2 3대 (컨트롤 플레인 1, 워커 2)와 노드 IAM 역할.
+# 이 스택은 노드를 "준비"까지만 한다 (containerd, kubeadm·kubelet·kubectl 설치).
+# kubeadm init / join 과 네트워크 플러그인은 v2/infra/kubeadm-bootstrap.sh 가 Session Manager 로 한다.
+# 출력을 남기고, 토큰 같은 값을 템플릿에 넣지 않기 위해서다.
+#   v2/infra/stacks.sh up kubeadm
+Description: vet2 kubeadm nodes (3 x EC2) and node IAM role
+
+Parameters:
+  AmiId:
+    # Ubuntu 24.04 의 최신 AMI 를 AWS 공개 파라미터에서 고른다 (만들 때마다 그날의 최신)
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+  InstanceType:
+    Type: String
+    Default: t3.medium
+
+Resources:
+  # SSH 없이 명령을 보내고(Session Manager), ECR 을 읽는다.
+  # 단, kubeadm 의 kubelet 은 이 역할로 ECR 에 로그인하지 않는다 (③ K-5)
+  NodeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: vet2-node
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement: [{ Effect: Allow, Principal: { Service: ec2.amazonaws.com }, Action: sts:AssumeRole }]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+  NodeProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: { InstanceProfileName: vet2-node, Roles: [!Ref NodeRole] }
+
+  # 세 노드가 같은 준비 스크립트를 쓴다. 노드 이름(hostname)은 각 인스턴스의 Name 태그에서 읽는다.
+  NodeTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: vet2-kubeadm-node
+      LaunchTemplateData:
+        ImageId: !Ref AmiId
+        InstanceType: !Ref InstanceType
+        IamInstanceProfile: { Arn: !GetAtt NodeProfile.Arn }
+        SecurityGroupIds: [!ImportValue vet2-NodeSg]
+        MetadataOptions: { HttpTokens: required, HttpPutResponseHopLimit: 2, InstanceMetadataTags: enabled }
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs: { VolumeSize: 20, VolumeType: gp3, DeleteOnTermination: true }
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            # EC2 (Ubuntu 24.04) 를 쿠버네티스 노드로 준비한다. 끝나면 /var/lib/vet2-ready 를 만든다.
+            set -euxo pipefail
+            exec > /var/log/vet2-prepare.log 2>&1
+            K8S_MINOR=v1.36
+
+            # 노드 이름 = 인스턴스의 Name 태그 (vet2-cp, vet2-w1, vet2-w2)
+            TOKEN=$(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 300')
+            NODE_NAME=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/tags/instance/Name)
+            hostnamectl set-hostname "$NODE_NAME"
+
+            # 1) kubelet 은 스왑이 켜져 있으면 뜨지 않는다
+            swapoff -a
+
+            # 2) 컨테이너 네트워크에 필요한 커널 모듈과 설정
+            printf 'overlay\nbr_netfilter\n' > /etc/modules-load.d/k8s.conf
+            modprobe overlay
+            modprobe br_netfilter
+            printf 'net.bridge.bridge-nf-call-iptables = 1\nnet.bridge.bridge-nf-call-ip6tables = 1\nnet.ipv4.ip_forward = 1\n' > /etc/sysctl.d/k8s.conf
+            sysctl --system
+
+            # 3) containerd. kubelet 과 같은 cgroup 관리자(systemd)를 쓰게 한다
+            apt-get update
+            apt-get install -y containerd apt-transport-https ca-certificates curl gpg
+            mkdir -p /etc/containerd
+            containerd config default > /etc/containerd/config.toml
+            sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+            systemctl restart containerd
+
+            # 4) kubeadm, kubelet, kubectl (쿠버네티스 공식 저장소)
+            mkdir -p /etc/apt/keyrings
+            curl -fsSL "https://pkgs.k8s.io/core:/stable:/$K8S_MINOR/deb/Release.key" | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+            echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/$K8S_MINOR/deb/ /" > /etc/apt/sources.list.d/kubernetes.list
+            apt-get update
+            apt-get install -y kubelet kubeadm kubectl
+            apt-mark hold kubelet kubeadm kubectl
+            systemctl enable --now kubelet
+
+            # 5) MySQL 볼륨을 둘 폴더 (vet2-w1 만 쓴다, ③ K-6)
+            mkdir -p /var/lib/vet2-mysql
+
+            touch /var/lib/vet2-ready
+
+  ControlPlane:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate: { LaunchTemplateId: !Ref NodeTemplate, Version: !GetAtt NodeTemplate.LatestVersionNumber }
+      SubnetId: !ImportValue vet2-SubnetA
+      Tags: [{ Key: Name, Value: vet2-cp }]
+  Worker1:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate: { LaunchTemplateId: !Ref NodeTemplate, Version: !GetAtt NodeTemplate.LatestVersionNumber }
+      SubnetId: !ImportValue vet2-SubnetA
+      Tags: [{ Key: Name, Value: vet2-w1 }]
+  Worker2:
+    Type: AWS::EC2::Instance
+    Properties:
+      LaunchTemplate: { LaunchTemplateId: !Ref NodeTemplate, Version: !GetAtt NodeTemplate.LatestVersionNumber }
+      SubnetId: !ImportValue vet2-SubnetA
+      Tags: [{ Key: Name, Value: vet2-w2 }]
+
+Outputs:
+  ControlPlaneId: { Value: !Ref ControlPlane }
+  Worker1Id:      { Value: !Ref Worker1 }
+  Worker2Id:      { Value: !Ref Worker2 }
+  ControlPlanePrivateIp: { Value: !GetAtt ControlPlane.PrivateIp }

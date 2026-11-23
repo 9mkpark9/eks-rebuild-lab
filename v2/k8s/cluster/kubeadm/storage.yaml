@@ -4,20 +4,24 @@
 # 먼저 vet2-w1 에서: mkdir -p /var/lib/vet2-mysql
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
-metadata: { name: vet2-local }
-provisioner: kubernetes.io/no-provisioner   # 자동으로 만들지 않는다. 아래 PV 를 직접 등록해 쓴다
+metadata:
+  name: vet2-local
+provisioner: kubernetes.io/no-provisioner # 자동으로 만들지 않는다. 아래 PV 를 직접 등록해 쓴다
 volumeBindingMode: WaitForFirstConsumer
 reclaimPolicy: Retain
 ---
 apiVersion: v1
 kind: PersistentVolume
-metadata: { name: vet2-mysql }
+metadata:
+  name: vet2-mysql
 spec:
-  capacity: { storage: 2Gi }
+  capacity:
+    storage: 2Gi
   accessModes: [ReadWriteOnce]
-  persistentVolumeReclaimPolicy: Retain       # PVC 를 지워도 노드의 데이터는 지우지 않는다
+  persistentVolumeReclaimPolicy: Retain # PVC 를 지워도 노드의 데이터는 지우지 않는다
   storageClassName: vet2-local
-  local: { path: /var/lib/vet2-mysql }
+  local:
+    path: /var/lib/vet2-mysql
   nodeAffinity:
     required:
       nodeSelectorTerms:

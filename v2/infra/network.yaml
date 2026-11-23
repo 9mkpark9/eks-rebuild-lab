@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: "2010-09-09"
+# 스택 1: 네트워크. kubeadm 과 EKS 가 함께 쓴다.
+# VPC 하나, 퍼블릭 서브넷 둘(2a, 2c — EKS 는 가용 영역 2개 이상이 필요하다), 인터넷 게이트웨이.
+# NAT 게이트웨이는 만들지 않는다 (노드가 퍼블릭 서브넷에 있다).
+#   v2/infra/stacks.sh up network
+Description: vet2 network (VPC, 2 public subnets, kubeadm node security group)
+
+Parameters:
+  MyCidr:
+    Type: String
+    Description: 웹(30080)과 kubectl(6443)을 열어 줄 주소. 예) 203.0.113.10/32
+    AllowedPattern: '^\d+\.\d+\.\d+\.\d+/\d+$'
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.20.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: [{ Key: Name, Value: vet2-vpc }]
+
+  Igw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags: [{ Key: Name, Value: vet2-igw }]
+  IgwAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: { VpcId: !Ref Vpc, InternetGatewayId: !Ref Igw }
+
+  # kubernetes.io/role/elb=1: EKS 가 인터넷용 ALB 를 놓을 서브넷을 이 태그로 찾는다
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.1.0/24
+      AvailabilityZone: !Sub ${AWS::Region}a
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: vet2-public-a }, { Key: kubernetes.io/role/elb, Value: "1" }]
+  SubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.2.0/24
+      AvailabilityZone: !Sub ${AWS::Region}c
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: vet2-public-c }, { Key: kubernetes.io/role/elb, Value: "1" }]
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: vet2-rt }]
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: IgwAttach
+    Properties: { RouteTableId: !Ref RouteTable, DestinationCidrBlock: 0.0.0.0/0, GatewayId: !Ref Igw }
+  SubnetARoute:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref SubnetA, RouteTableId: !Ref RouteTable }
+  SubnetCRoute:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref SubnetC, RouteTableId: !Ref RouteTable }
+
+  # kubeadm 노드용. 노드끼리는 모두 허용, 밖에서는 MyCidr 에서만 30080 과 6443.
+  # (EKS Auto Mode 노드의 보안 그룹은 EKS 가 따로 만든다)
+  NodeSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: vet2-nodes
+      GroupDescription: vet2 kubeadm nodes
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 30080, ToPort: 30080, CidrIp: !Ref MyCidr, Description: web-nodeport }
+        - { IpProtocol: tcp, FromPort: 6443, ToPort: 6443, CidrIp: !Ref MyCidr, Description: kubectl }
+      Tags: [{ Key: Name, Value: vet2-nodes }]
+  NodeSgSelf:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties: { GroupId: !Ref NodeSg, IpProtocol: "-1", SourceSecurityGroupId: !Ref NodeSg, Description: node-to-node }
+
+# 다른 스택이 !ImportValue 로 가져다 쓴다
+Outputs:
+  VpcId:      { Value: !Ref Vpc,     Export: { Name: vet2-VpcId } }
+  SubnetA:    { Value: !Ref SubnetA, Export: { Name: vet2-SubnetA } }
+  SubnetC:    { Value: !Ref SubnetC, Export: { Name: vet2-SubnetC } }
+  NodeSgId:   { Value: !Ref NodeSg,  Export: { Name: vet2-NodeSg } }

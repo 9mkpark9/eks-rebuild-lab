@@ -12,7 +12,9 @@ resources:
   - ../../base
   - ingress.yaml
 patches:
-  - target: { kind: StatefulSet, name: mysql }
+  - target:
+      kind: StatefulSet
+      name: mysql
     patch: |-
       - { op: add, path: /spec/volumeClaimTemplates/0/spec/storageClassName, value: vet2-ebs }
   # 복제본이 있는 넷: 노드가 1대뿐이어도 2대로 나누게 하고(minDomains), 가용 영역도 나눈다 (④ 문제).
@@ -32,12 +34,18 @@ patches:
           labelSelector: { matchExpressions: [{ key: app, operator: Exists }] }
   # 복제본이 하나뿐인 mysql 과 redis 는 Auto Mode 가 노드를 정리할 때 옮기지 않게 한다.
   # 옮기면 그동안 DB 와 로그인이 끊긴다. (예방이다. 정리 때문에 옮겨지는 것을 이번에 관찰하지는 못했다)
-  - target: { kind: StatefulSet|Deployment, name: mysql|redis }
+  - target:
+      kind: StatefulSet|Deployment
+      name: mysql|redis
     patch: |-
       - { op: add, path: /spec/template/metadata/annotations, value: { karpenter.sh/do-not-disrupt: "true" } }
 images:
   - { name: vet2-web, newName: ECR_REGISTRY/vet2-web, newTag: 1.0.0 }
   - { name: vet2-auth, newName: ECR_REGISTRY/vet2-auth, newTag: 1.0.0 }
   - { name: vet2-clinic, newName: ECR_REGISTRY/vet2-clinic, newTag: 1.0.0 }
-  - { name: vet2-reservation, newName: ECR_REGISTRY/vet2-reservation, newTag: 1.0.0 }
+  - {
+      name: vet2-reservation,
+      newName: ECR_REGISTRY/vet2-reservation,
+      newTag: 1.0.0,
+    }
   - { name: vet2-db, newName: ECR_REGISTRY/vet2-db, newTag: 1.0.0 }

@@ -10,7 +10,9 @@ resources:
   - ../../base
 patches:
   # Docker Desktop 은 LoadBalancer 를 localhost 로 열어 준다
-  - target: { kind: Service, name: web }
+  - target:
+      kind: Service
+      name: web
     patch: |-
       - { op: replace, path: /spec/type, value: LoadBalancer }
       - { op: replace, path: /spec/ports/0/port, value: 28080 }

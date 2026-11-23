@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: "2010-09-09"
+# 스택 2: 이미지 저장소 5개. kubeadm 과 EKS 가 함께 쓴다.
+# EmptyOnDelete: 스택을 지울 때 이미지가 남아 있어도 저장소를 지운다 (없으면 이미지가 있는 저장소에서 삭제가 실패한다).
+#   v2/infra/stacks.sh up ecr        (그다음 v2/infra/push-images.sh 로 이미지를 올린다)
+Description: vet2 ECR repositories
+
+Resources:
+  Auth:        { Type: AWS::ECR::Repository, Properties: { RepositoryName: vet2-auth,        EmptyOnDelete: true } }
+  Clinic:      { Type: AWS::ECR::Repository, Properties: { RepositoryName: vet2-clinic,      EmptyOnDelete: true } }
+  Reservation: { Type: AWS::ECR::Repository, Properties: { RepositoryName: vet2-reservation, EmptyOnDelete: true } }
+  Web:         { Type: AWS::ECR::Repository, Properties: { RepositoryName: vet2-web,         EmptyOnDelete: true } }
+  Db:          { Type: AWS::ECR::Repository, Properties: { RepositoryName: vet2-db,          EmptyOnDelete: true } }
+
+Outputs:
+  Registry:
+    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com

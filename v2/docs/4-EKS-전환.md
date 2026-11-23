@@ -93,6 +93,8 @@ kubeadm 과 달라진 점은 overlay 하나에 모였다. base 는 ③과 같다
 
 ### 4.1 클러스터 만들기
 
+> 처음에는 아래처럼 AWS CLI 로 만들었다. 그 뒤 같은 설정을 [eks.yaml](../infra/eks.yaml) 스택으로 바꿨다 ([⑤ 6장](5-최종문서.md#6-aws-자원은-cloudformation-스택으로)). 스택으로 만든 클러스터에서도 시나리오 65 / 65 를 확인했다.
+
 ```bash
 aws eks create-cluster --name vet2-eks --kubernetes-version 1.36 \
   --role-arn arn:aws:iam::<계정>:role/vet2-eks-cluster \
@@ -396,7 +398,8 @@ kubectl -n vet2 delete pod -l app=redis
 ## 10. 다시 실행하는 순서
 
 ```bash
-# (4.1 의 명령으로 클러스터를 만든 뒤)
+v2/infra/stacks.sh up network && v2/infra/stacks.sh up ecr && v2/infra/push-images.sh
+v2/infra/stacks.sh up eks                # 11분 안팎
 aws eks update-kubeconfig --name vet2-eks --kubeconfig v2/_run/kubeconfig-eks
 export KUBECONFIG=v2/_run/kubeconfig-eks
 kubectl apply -f v2/k8s/cluster/eks/
