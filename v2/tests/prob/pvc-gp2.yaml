@@ -1,0 +1,19 @@
+# E-2 재현: EKS 에 처음부터 있는 StorageClass gp2(kubernetes.io/aws-ebs)로 볼륨을 요청하고 Pod 에 붙인다.
+# Auto Mode 의 EBS 드라이버 이름은 ebs.csi.eks.amazonaws.com 이라, 이 요청은 아무도 처리하지 않는다.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: data-gp2 }
+spec:
+  storageClassName: gp2
+  accessModes: [ReadWriteOnce]
+  resources: { requests: { storage: 1Gi } }
+---
+apiVersion: v1
+kind: Pod
+metadata: { name: use-gp2 }
+spec:
+  containers:
+    - name: c
+      image: registry.k8s.io/pause:3.10
+      volumeMounts: [{ name: d, mountPath: /data }]
+  volumes: [{ name: d, persistentVolumeClaim: { claimName: data-gp2 } }]

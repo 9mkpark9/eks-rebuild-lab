@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+  <rect width="1200" height="430" fill="#ffffff"/>
+  <text x="40" y="44" font-size="26" font-weight="700" fill="#0f172a">같은 앱을 세 번 옮겼다</text>
+  <text x="40" y="72" font-size="15" fill="#475569">모든 단계에서 같은 시나리오 테스트(60 ~ 65항목)로 확인 · 소스는 고치지 않았다</text>
+  <g font-size="14">
+    <rect x="40" y="110" width="250" height="260" rx="14" fill="#f1f5f9" stroke="#64748b"/>
+    <text x="165" y="142" text-anchor="middle" font-size="19" font-weight="700" fill="#0f172a">① 워크로드</text>
+    <text x="165" y="166" text-anchor="middle" fill="#475569">WSL 2 Ubuntu</text>
+    <text x="60" y="206" fill="#0f172a">· jar 3개를 직접 실행</text>
+    <text x="60" y="232" fill="#0f172a">· MySQL·Redis 는 공식 이미지</text>
+    <text x="60" y="258" fill="#0f172a">· 설정은 환경 변수</text>
+    <text x="60" y="284" fill="#0f172a">· 시나리오 60항목</text>
+    <text x="165" y="348" text-anchor="middle" fill="#2563eb" font-weight="700">무엇이 필요한지 안다</text>
+
+    <rect x="330" y="110" width="250" height="260" rx="14" fill="#eef2ff" stroke="#6366f1"/>
+    <text x="455" y="142" text-anchor="middle" font-size="19" font-weight="700" fill="#0f172a">② 컨테이너</text>
+    <text x="455" y="166" text-anchor="middle" fill="#475569">WSL 2 · Docker Engine</text>
+    <text x="350" y="206" fill="#0f172a">· 이미지 5종 (멀티스테이지)</text>
+    <text x="350" y="232" fill="#0f172a">· compose 로 6개</text>
+    <text x="350" y="258" fill="#0f172a">· root 아님, healthcheck</text>
+    <text x="350" y="284" fill="#0f172a">· ECR 에 push (amd64)</text>
+    <text x="455" y="348" text-anchor="middle" fill="#2563eb" font-weight="700">어디서나 같게 뜬다</text>
+
+    <rect x="620" y="110" width="250" height="260" rx="14" fill="#eff6ff" stroke="#3b82f6"/>
+    <text x="745" y="142" text-anchor="middle" font-size="19" font-weight="700" fill="#0f172a">③ kubeadm</text>
+    <text x="745" y="166" text-anchor="middle" fill="#475569">EC2 3대에 직접 구축</text>
+    <text x="640" y="206" fill="#0f172a">· 복제본 2, probe, 롤링</text>
+    <text x="640" y="232" fill="#0f172a">· NodePort 로 노출</text>
+    <text x="640" y="258" fill="#0f172a">· StatefulSet + 노드 디스크</text>
+    <text x="640" y="284" fill="#0f172a">· ConfigMap / Secret</text>
+    <text x="745" y="348" text-anchor="middle" fill="#2563eb" font-weight="700">멈추지 않고 바꾼다</text>
+
+    <rect x="910" y="110" width="250" height="260" rx="14" fill="#ecfdf5" stroke="#10b981"/>
+    <text x="1035" y="142" text-anchor="middle" font-size="19" font-weight="700" fill="#0f172a">④ EKS</text>
+    <text x="1035" y="166" text-anchor="middle" fill="#475569">Auto Mode (관리형)</text>
+    <text x="930" y="206" fill="#0f172a">· Ingress → ALB</text>
+    <text x="930" y="232" fill="#0f172a">· EBS StorageClass</text>
+    <text x="930" y="258" fill="#0f172a">· 노드·영역 분산</text>
+    <text x="930" y="284" fill="#0f172a">· 선택: DB → RDS</text>
+    <text x="1035" y="348" text-anchor="middle" fill="#2563eb" font-weight="700">운영을 맡긴다</text>
+  </g>
+  <g stroke="#64748b" stroke-width="2.5" fill="none">
+    <path d="M292 240 H326" marker-end="url(#m)"/><path d="M582 240 H616" marker-end="url(#m)"/><path d="M872 240 H906" marker-end="url(#m)"/>
+  </g>
+  <text x="600" y="405" font-size="14" text-anchor="middle" fill="#475569">설정은 Kustomize 하나 (base + overlay: local · kubeadm · eks · kubeadm-rds · eks-rds) · AWS 자원은 CloudFormation 스택 5개</text>
+  <defs><marker id="m" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker></defs>
+</svg>

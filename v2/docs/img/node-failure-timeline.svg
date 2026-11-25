@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 400" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+  <rect width="1100" height="400" fill="#ffffff"/>
+  <text x="40" y="40" font-size="22" font-weight="700" fill="#0f172a">앱만 있는 워커(vet2-w2)를 강제로 멈췄을 때 — 고치기 전과 뒤</text>
+  <text x="40" y="64" font-size="13" fill="#475569">EC2 kubeadm, 2026-11-23 측정 (③ 6.4). 가로축은 멈춘 순간부터의 초. 1px = 2초</text>
+
+  <!-- 축: x = 160 + t*2 -->
+  <g stroke="#cbd5e1" stroke-width="1">
+    <line x1="160" y1="90" x2="160" y2="330"/><line x1="260" y1="90" x2="260" y2="330"/>
+    <line x1="360" y1="90" x2="360" y2="330"/><line x1="460" y1="90" x2="460" y2="330"/>
+    <line x1="560" y1="90" x2="560" y2="330"/><line x1="660" y1="90" x2="660" y2="330"/>
+    <line x1="760" y1="90" x2="760" y2="330"/><line x1="860" y1="90" x2="860" y2="330"/>
+  </g>
+  <g font-size="12" fill="#64748b" text-anchor="middle">
+    <text x="160" y="348">0초</text><text x="260" y="348">50</text><text x="360" y="348">100</text><text x="460" y="348">150</text>
+    <text x="560" y="348">200</text><text x="660" y="348">250</text><text x="760" y="348">300</text><text x="860" y="348">350</text>
+  </g>
+
+  <!-- 고치기 전 -->
+  <text x="40" y="140" font-size="16" font-weight="700" fill="#991b1b">고치기 전</text>
+  <text x="40" y="160" font-size="12" fill="#7f1d1d">기본 300초 대기</text>
+  <rect x="160" y="122" width="122" height="30" fill="#fde68a"/>
+  <rect x="282" y="122" width="594" height="30" fill="#fecaca"/>
+  <rect x="876" y="122" width="70" height="30" fill="#fed7aa"/>
+  <g font-size="12" fill="#0f172a">
+    <text x="166" y="142">알아채기까지</text>
+    <text x="290" y="142">NotReady — Pod 를 옮기지 않고 300초 기다림 (Redis 0/1, 로그인 불가)</text>
+  </g>
+  <line x1="946" y1="112" x2="946" y2="162" stroke="#16a34a" stroke-width="3"/>
+  <g font-size="12" fill="#334155">
+    <text x="282" y="178" text-anchor="middle">61초 NotReady</text>
+    <text x="876" y="178" text-anchor="middle">358초 내보냄</text>
+    <text x="960" y="142" fill="#166534" font-weight="700">393초 복구</text>
+    <text x="960" y="160" fill="#991b1b">실패 675건</text>
+  </g>
+
+  <!-- 고친 뒤 -->
+  <text x="40" y="250" font-size="16" font-weight="700" fill="#166534">고친 뒤</text>
+  <text x="40" y="270" font-size="12" fill="#14532d">tolerationSeconds 30</text>
+  <rect x="160" y="232" width="104" height="30" fill="#fde68a"/>
+  <rect x="264" y="232" width="62" height="30" fill="#fecaca"/>
+  <rect x="326" y="232" width="64" height="30" fill="#fed7aa"/>
+  <g font-size="12" fill="#0f172a">
+    <text x="166" y="252">알아채기</text>
+    <text x="268" y="252">30초</text>
+    <text x="330" y="252">다시 뜸</text>
+  </g>
+  <line x1="390" y1="222" x2="390" y2="272" stroke="#16a34a" stroke-width="3"/>
+  <g font-size="12" fill="#334155">
+    <text x="264" y="288" text-anchor="middle">52초 NotReady</text>
+    <text x="326" y="306" text-anchor="middle">83초 Redis 복구</text>
+    <text x="404" y="252" fill="#166534" font-weight="700">115초 전부 복구</text>
+    <text x="404" y="270" fill="#166534">실패 110건</text>
+  </g>
+
+  <g font-size="12" fill="#475569">
+    <rect x="160" y="368" width="14" height="12" fill="#fde68a"/><text x="180" y="379">노드가 죽은 것을 모름</text>
+    <rect x="340" y="368" width="14" height="12" fill="#fecaca"/><text x="360" y="379">알지만 Pod 를 옮기지 않음</text>
+    <rect x="550" y="368" width="14" height="12" fill="#fed7aa"/><text x="570" y="379">새 노드에서 Pod 가 뜨는 중</text>
+    <line x1="760" y1="366" x2="760" y2="382" stroke="#16a34a" stroke-width="3"/><text x="770" y="379">전부 복구</text>
+  </g>
+</svg>

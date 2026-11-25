@@ -8,6 +8,7 @@ namespace: vet2
 resources:
   - namespace.yaml
   - ../../base
+  - ../../mysql          # 이 PC 에서는 RDS 에 붙을 수 없어 클러스터 안 MySQL 을 쓴다
 patches:
   # Docker Desktop 은 LoadBalancer 를 localhost 로 열어 준다
   - target:
@@ -21,4 +22,4 @@ images:
   - { name: vet2-auth, newTag: 1.0.0 }
   - { name: vet2-clinic, newTag: 1.0.0 }
   - { name: vet2-reservation, newTag: 1.0.0 }
-  - { name: vet2-db, newTag: 1.0.0 }
+  - { name: vet2-db, newTag: 1.1.0 }

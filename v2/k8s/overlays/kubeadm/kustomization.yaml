@@ -8,6 +8,7 @@ namespace: vet2
 resources:
   - namespace.yaml
   - ../../base
+  - ../../mysql          # 필수 과제: DB 는 클러스터 안 (StatefulSet + 볼륨)
 patches:
   # 로드밸런서를 만들어 주는 장치가 없으므로 노드의 포트를 직접 연다: http://<노드의 공인 IP>:30080
   - target:
@@ -29,4 +30,4 @@ images:
       newName: ECR_REGISTRY/vet2-reservation,
       newTag: 1.0.0,
     }
-  - { name: vet2-db, newName: ECR_REGISTRY/vet2-db, newTag: 1.0.0 }
+  - { name: vet2-db, newName: ECR_REGISTRY/vet2-db, newTag: 1.1.0 }

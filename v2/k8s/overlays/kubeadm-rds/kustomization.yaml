@@ -1,0 +1,25 @@
+# kubeadm-rds: 선택 과제 "RDS 로 DB 전환" (kubeadm). 필수 구성(overlays/kubeadm)과 같은 클러스터에 따로 띄운다.
+#   - 네임스페이스 vet2-rds, 웹은 NodePort 30081 (필수 구성은 30080)
+#   - DB 는 클러스터 안 MySQL 대신 RDS (components/rds). mysql/ 를 넣지 않는다
+#   v2/infra/stacks.sh up rds && v2/k8s/rds-secret.sh -n vet2-rds && v2/k8s/apply.sh kubeadm-rds
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: vet2-rds
+resources:
+  - namespace.yaml
+  - ../../base
+components:
+  - ../../components/rds
+patches:
+  - target:
+      kind: Service
+      name: web
+    patch: |-
+      - { op: replace, path: /spec/type, value: NodePort }
+      - { op: add, path: /spec/ports/0/nodePort, value: 30081 }
+images:
+  - { name: vet2-web, newName: ECR_REGISTRY/vet2-web, newTag: 1.0.0 }
+  - { name: vet2-auth, newName: ECR_REGISTRY/vet2-auth, newTag: 1.0.0 }
+  - { name: vet2-clinic, newName: ECR_REGISTRY/vet2-clinic, newTag: 1.0.0 }
+  - { name: vet2-reservation, newName: ECR_REGISTRY/vet2-reservation, newTag: 1.0.0 }
+  - { name: vet2-db, newName: ECR_REGISTRY/vet2-db, newTag: 1.1.0 }

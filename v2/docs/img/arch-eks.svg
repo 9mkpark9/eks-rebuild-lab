@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+  <rect width="1200" height="640" fill="#ffffff"/>
+  <text x="40" y="44" font-size="26" font-weight="700" fill="#0f172a">④ EKS Auto Mode</text>
+  <text x="40" y="72" font-size="15" fill="#475569">노드·로드밸런서·볼륨 드라이버는 EKS 가 관리 · 노드는 Pod 요청량에 맞춰 자동 생성 (c5a.large) · DB 는 클러스터 안 (EBS)</text>
+
+  <rect x="40" y="110" width="170" height="70" rx="10" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="125" y="140" font-size="16" text-anchor="middle" fill="#0f172a">이 PC (브라우저)</text>
+  <text x="125" y="162" font-size="13" text-anchor="middle" fill="#64748b">허용된 IP 하나</text>
+  <path d="M210 145 H300" stroke="#2563eb" stroke-width="2.5" marker-end="url(#a)"/>
+
+  <rect x="300" y="110" width="840" height="60" rx="10" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="720" y="137" font-size="18" font-weight="700" text-anchor="middle" fill="#1e3a8a">ALB (internet-facing) ← Ingress 가 만든다</text>
+  <text x="720" y="159" font-size="13" text-anchor="middle" fill="#1e3a8a">대상: Pod IP 직접 (target-type ip) · /health 로 상태 확인 · 이 PC 의 IP 에서만</text>
+  <path d="M510 170 V215" stroke="#2563eb" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M930 170 V215" stroke="#2563eb" stroke-width="2" marker-end="url(#a)"/>
+
+  <!-- AZ a -->
+  <rect x="300" y="215" width="410" height="310" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="320" y="242" font-size="15" fill="#475569">가용 영역 ap-northeast-2a</text>
+  <rect x="320" y="255" width="370" height="250" rx="10" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="340" y="282" font-size="16" font-weight="700" fill="#1e3a8a">노드 (Auto Mode, Bottlerocket)</text>
+  <g font-size="14" fill="#0f172a">
+    <rect x="340" y="295" width="160" height="38" rx="6" fill="#fff" stroke="#93c5fd"/><text x="420" y="319" text-anchor="middle">web</text>
+    <rect x="510" y="295" width="160" height="38" rx="6" fill="#fff" stroke="#93c5fd"/><text x="590" y="319" text-anchor="middle">auth</text>
+    <rect x="340" y="343" width="160" height="38" rx="6" fill="#fff" stroke="#93c5fd"/><text x="420" y="367" text-anchor="middle">clinic</text>
+    <rect x="510" y="343" width="160" height="38" rx="6" fill="#fff" stroke="#93c5fd"/><text x="590" y="367" text-anchor="middle">reservation</text>
+    <rect x="340" y="395" width="330" height="48" rx="6" fill="#fef3c7" stroke="#f59e0b"/><text x="505" y="424" text-anchor="middle" font-weight="700">mysql-0 (StatefulSet)</text>
+    <rect x="340" y="452" width="330" height="40" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-dasharray="4 3"/><text x="505" y="477" text-anchor="middle" font-size="13" fill="#92400e">EBS gp3 (StorageClass vet2-ebs, 직접 만듦)</text>
+  </g>
+
+  <!-- AZ c -->
+  <rect x="730" y="215" width="410" height="310" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="750" y="242" font-size="15" fill="#475569">가용 영역 ap-northeast-2c</text>
+  <rect x="750" y="255" width="370" height="250" rx="10" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="770" y="282" font-size="16" font-weight="700" fill="#1e3a8a">노드 (Auto Mode, Bottlerocket)</text>
+  <g font-size="14" fill="#0f172a">
+    <rect x="770" y="295" width="160" height="38" rx="6" fill="#fff" stroke="#93c5fd"/><text x="850" y="319" text-anchor="middle">web</text>
+    <rect x="940" y="295" width="160" height="38" rx="6" fill="#fff" stroke="#93c5fd"/><text x="1020" y="319" text-anchor="middle">auth</text>
+    <rect x="770" y="343" width="160" height="38" rx="6" fill="#fff" stroke="#93c5fd"/><text x="850" y="367" text-anchor="middle">clinic</text>
+    <rect x="940" y="343" width="160" height="38" rx="6" fill="#fff" stroke="#93c5fd"/><text x="1020" y="367" text-anchor="middle">reservation</text>
+    <rect x="770" y="395" width="160" height="48" rx="6" fill="#fce7f3" stroke="#ec4899"/><text x="850" y="424" text-anchor="middle">redis (세션)</text>
+  </g>
+
+  <rect x="300" y="545" width="840" height="70" rx="12" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="320" y="572" font-size="16" font-weight="700" fill="#334155">컨트롤 플레인 (AWS 관리) · ECR 에서 이미지 (노드 IAM 역할, 로그인 Secret 필요 없음)</text>
+  <text x="320" y="598" font-size="14" fill="#334155">복제본은 노드와 가용 영역에 나눈다 (minDomains: 2) · redis·mysql 은 Auto Mode 정리 대상에서 뺀다 (do-not-disrupt)</text>
+
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker></defs>
+</svg>

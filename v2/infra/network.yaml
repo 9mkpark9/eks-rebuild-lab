@@ -46,6 +46,35 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags: [{ Key: Name, Value: vet2-public-c }, { Key: kubernetes.io/role/elb, Value: "1" }]
 
+  # 사설 서브넷 2개: RDS 전용. 인터넷 게이트웨이로 가는 경로가 없다 (NAT 도 없다). VPC 안에서만 닿는다.
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.11.0/24
+      AvailabilityZone: !Sub ${AWS::Region}a
+      MapPublicIpOnLaunch: false
+      Tags: [{ Key: Name, Value: vet2-private-a }]
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.20.12.0/24
+      AvailabilityZone: !Sub ${AWS::Region}c
+      MapPublicIpOnLaunch: false
+      Tags: [{ Key: Name, Value: vet2-private-c }]
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: vet2-private-rt }]     # VPC 안(local) 경로만 있다
+  PrivateSubnetARoute:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref PrivateSubnetA, RouteTableId: !Ref PrivateRouteTable }
+  PrivateSubnetCRoute:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: { SubnetId: !Ref PrivateSubnetC, RouteTableId: !Ref PrivateRouteTable }
+
   RouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -62,7 +91,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties: { SubnetId: !Ref SubnetC, RouteTableId: !Ref RouteTable }
 
-  # kubeadm 노드용. 노드끼리는 모두 허용, 밖에서는 MyCidr 에서만 30080 과 6443.
+  # kubeadm 노드용. 밖에서는 MyCidr 에서만 30080(필수 구성), 30081(RDS 구성), 6443(kubectl). 노드끼리는 아래 세 가지만.
   # (EKS Auto Mode 노드의 보안 그룹은 EKS 가 따로 만든다)
   NodeSg:
     Type: AWS::EC2::SecurityGroup
@@ -72,15 +101,25 @@ Resources:
       VpcId: !Ref Vpc
       SecurityGroupIngress:
         - { IpProtocol: tcp, FromPort: 30080, ToPort: 30080, CidrIp: !Ref MyCidr, Description: web-nodeport }
+        - { IpProtocol: tcp, FromPort: 30081, ToPort: 30081, CidrIp: !Ref MyCidr, Description: web-nodeport-rds }
         - { IpProtocol: tcp, FromPort: 6443, ToPort: 6443, CidrIp: !Ref MyCidr, Description: kubectl }
       Tags: [{ Key: Name, Value: vet2-nodes }]
-  NodeSgSelf:
+  # 노드끼리도 필요한 것만 연다 (③ 2.2). Pod 끼리의 통신은 모두 Flannel 이 UDP 8472 로 감싸 보낸다.
+  NodeSgVxlan:
     Type: AWS::EC2::SecurityGroupIngress
-    Properties: { GroupId: !Ref NodeSg, IpProtocol: "-1", SourceSecurityGroupId: !Ref NodeSg, Description: node-to-node }
+    Properties: { GroupId: !Ref NodeSg, IpProtocol: udp, FromPort: 8472, ToPort: 8472, SourceSecurityGroupId: !Ref NodeSg, Description: flannel-vxlan }
+  NodeSgApi:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties: { GroupId: !Ref NodeSg, IpProtocol: tcp, FromPort: 6443, ToPort: 6443, SourceSecurityGroupId: !Ref NodeSg, Description: kube-apiserver }
+  NodeSgKubelet:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties: { GroupId: !Ref NodeSg, IpProtocol: tcp, FromPort: 10250, ToPort: 10250, SourceSecurityGroupId: !Ref NodeSg, Description: kubelet }
 
 # 다른 스택이 !ImportValue 로 가져다 쓴다
 Outputs:
   VpcId:      { Value: !Ref Vpc,     Export: { Name: vet2-VpcId } }
   SubnetA:    { Value: !Ref SubnetA, Export: { Name: vet2-SubnetA } }
   SubnetC:    { Value: !Ref SubnetC, Export: { Name: vet2-SubnetC } }
+  PrivateSubnetA: { Value: !Ref PrivateSubnetA, Export: { Name: vet2-PrivateSubnetA } }
+  PrivateSubnetC: { Value: !Ref PrivateSubnetC, Export: { Name: vet2-PrivateSubnetC } }
   NodeSgId:   { Value: !Ref NodeSg,  Export: { Name: vet2-NodeSg } }

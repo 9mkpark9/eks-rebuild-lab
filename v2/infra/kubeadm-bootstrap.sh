@@ -52,7 +52,7 @@ kubectl -n kube-system patch deploy coredns --patch-file "$(P v2/k8s/cluster/kub
 kubectl -n kube-system rollout status deploy coredns --timeout=180s > /dev/null
 kubectl apply -f "$(P v2/k8s/cluster/kubeadm/storage.yaml)" > /dev/null
 
-echo "6) Secret 과 앱"
+echo "6) Secret 과 앱 — 필수 구성 (네임스페이스 vet2, 클러스터 안 MySQL)"
 bash v2/k8s/secrets.sh -n vet2
 bash v2/k8s/kubeadm/ecr-pull-secret.sh -n vet2
 bash v2/k8s/apply.sh kubeadm > /dev/null
@@ -60,3 +60,15 @@ for d in web auth clinic reservation redis; do kubectl -n vet2 rollout status de
 kubectl -n vet2 rollout status sts/mysql --timeout=300s > /dev/null
 kubectl -n vet2 get pods -o wide
 echo "웹: http://<워커 공인 IP>:30080"
+
+# 선택 과제 "RDS 로 DB 전환": 스택 vet2-rds 가 있을 때만 같은 클러스터에 따로 띄운다 (네임스페이스 vet2-rds)
+if aws --region "${AWS_REGION:-ap-northeast-2}" cloudformation describe-stacks --stack-name vet2-rds > /dev/null 2>&1; then
+    echo "7) 선택 구성 (네임스페이스 vet2-rds, RDS)"
+    bash v2/k8s/secrets.sh -n vet2-rds
+    bash v2/k8s/rds-secret.sh -n vet2-rds
+    bash v2/k8s/kubeadm/ecr-pull-secret.sh -n vet2-rds
+    bash v2/k8s/apply.sh kubeadm-rds > /dev/null
+    kubectl -n vet2-rds wait --for=condition=complete job/db-init --timeout=300s > /dev/null
+    for d in web auth clinic reservation redis; do kubectl -n vet2-rds rollout status deploy/$d --timeout=300s > /dev/null; done
+    echo "웹 (RDS): http://<워커 공인 IP>:30081"
+fi

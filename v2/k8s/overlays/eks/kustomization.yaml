@@ -10,6 +10,7 @@ namespace: vet2
 resources:
   - namespace.yaml
   - ../../base
+  - ../../mysql          # 필수 과제: DB 는 클러스터 안 (StatefulSet + 볼륨)
   - ingress.yaml
 patches:
   - target:
@@ -48,4 +49,4 @@ images:
       newName: ECR_REGISTRY/vet2-reservation,
       newTag: 1.0.0,
     }
-  - { name: vet2-db, newName: ECR_REGISTRY/vet2-db, newTag: 1.0.0 }
+  - { name: vet2-db, newName: ECR_REGISTRY/vet2-db, newTag: 1.1.0 }

@@ -18,8 +18,12 @@ SERVICES="auth clinic reservation"
 
 port_of() { case "$1" in auth) echo 28081 ;; clinic) echo 28082 ;; reservation) echo 28083 ;; esac; }
 password_of() { case "$1" in auth) echo "$DB_AUTH_PASSWORD" ;; clinic) echo "$DB_CLINIC_PASSWORD" ;; reservation) echo "$DB_RESERVATION_PASSWORD" ;; esac; }
-# 그 포트를 듣고 있는 Windows 프로세스 번호
-pid_of() { netstat -ano | grep -E "[:.]$(port_of "$1") .*LISTENING" | awk '{print $NF}' | head -1; }
+# 그 포트를 듣고 있는 프로세스 번호. Windows(Git Bash)는 netstat, Linux(WSL 2)는 ss 로 찾는다
+if command -v taskkill > /dev/null 2>&1; then WIN=1; else WIN=0; fi
+pid_of() {
+    if [ $WIN = 1 ]; then netstat -ano | grep -E "[:.]$(port_of "$1") .*LISTENING" | awk '{print $NF}' | head -1
+    else ss -ltnpH "sport = :$(port_of "$1")" 2>/dev/null | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2; fi
+}
 health() { curl -s -m 2 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$(port_of "$1")/health" 2>/dev/null || true; }
 
 start() {
@@ -47,7 +51,8 @@ status() {
     for s in $SERVICES; do
         pid="$(pid_of "$s")"
         mem="-"
-        [ -n "$pid" ] && mem="$(tasklist //FI "PID eq $pid" //FO CSV //NH 2>/dev/null | awk -F'","' '{gsub(/"/,"",$5); print $5}')"
+        if [ -n "$pid" ] && [ $WIN = 1 ]; then mem="$(tasklist //FI "PID eq $pid" //FO CSV //NH 2>/dev/null | awk -F'","' '{gsub(/"/,"",$5); print $5}')"
+        elif [ -n "$pid" ]; then mem="$(( $(ps -o rss= -p "$pid") / 1024 )) MiB (RSS)"; fi
         echo "$s: 포트 $(port_of "$s")  PID ${pid:--}  메모리 $mem  /health $(health "$s")"
     done
 }
@@ -56,7 +61,7 @@ stop() {
     for s in $SERVICES; do
         pid="$(pid_of "$s")"
         [ -z "$pid" ] && { echo "$s: 실행 중이 아님"; continue; }
-        taskkill //PID "$pid" //F > /dev/null 2>&1 && echo "$s: 끝냄 (PID $pid)"
+        if [ $WIN = 1 ]; then taskkill //PID "$pid" //F > /dev/null 2>&1; else kill "$pid"; fi && echo "$s: 끝냄 (PID $pid)"
     done
 }
 

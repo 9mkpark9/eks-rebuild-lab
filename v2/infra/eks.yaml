@@ -83,3 +83,5 @@ Resources:
 
 Outputs:
   ClusterName: { Value: !Ref Cluster }
+  # Auto Mode 노드는 이 클러스터 보안 그룹을 쓴다. RDS 스택이 이 그룹에서 오는 3306 만 받는다.
+  ClusterSgId: { Value: !GetAtt Cluster.ClusterSecurityGroupId, Export: { Name: vet2-EksClusterSg } }

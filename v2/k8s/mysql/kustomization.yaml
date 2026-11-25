@@ -1,0 +1,6 @@
+# 클러스터 안의 MySQL (StatefulSet). 로컬 클러스터(overlays/local)만 쓴다.
+# kubeadm 과 EKS 는 RDS 를 쓴다 (v2/infra/rds.yaml, v2/k8s/rds/).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - mysql.yaml

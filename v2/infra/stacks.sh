@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# vet2 의 AWS 자원을 CloudFormation 스택 4개로 만들고 지운다.
+# vet2 의 AWS 자원을 CloudFormation 스택 5개로 만들고 지운다.
 #
-#   v2/infra/stacks.sh up <network|ecr|kubeadm|eks|all>     만들기 (이미 있으면 바뀐 것만 고친다)
-#   v2/infra/stacks.sh down <eks|kubeadm|ecr|network|all>   지우기 (되돌릴 수 없다)
-#   v2/infra/stacks.sh status                               스택 4개의 상태
+#   v2/infra/stacks.sh up <network|ecr|kubeadm|eks|rds|all>     만들기 (이미 있으면 바뀐 것만 고친다)
+#   v2/infra/stacks.sh down <rds|eks|kubeadm|ecr|network|all>   지우기 (되돌릴 수 없다)
+#   v2/infra/stacks.sh status                               스택 5개의 상태
 #   v2/infra/stacks.sh validate                             템플릿 문법 검사 (AWS 에 아무것도 만들지 않는다)
 #
-# 순서: 만들 때 network → ecr → kubeadm, eks.  지울 때 거꾸로.
+# 순서: 만들 때 network → ecr → kubeadm, eks → rds.  지울 때 거꾸로.
+# rds 는 노드 보안 그룹 두 개(network 의 vet2-NodeSg, eks 의 vet2-EksClusterSg)를 쓴다. rds 가 남아 있으면 eks 는 지워지지 않는다.
 # kubeadm 과 eks 는 network 가 내보내는 값(vet2-SubnetA 등)을 쓴다. 그 둘이 남아 있으면 network 는 지워지지 않는다.
 # MyCidr(웹·API 를 열어 줄 주소)는 이 PC 의 공인 IP 로 채운다. 바꾸려면 MY_CIDR 환경 변수로 준다.
 set -euo pipefail
@@ -36,11 +37,11 @@ down() {
     if [ "$s" = eks ] && $CF describe-stacks --stack-name vet2-eks > /dev/null 2>&1; then
         # ALB 와 MySQL 의 EBS 는 클러스터 안의 Ingress 와 PVC 가 만든 것이라 스택에 들어 있지 않다.
         # 클러스터를 먼저 지우면 그것을 지워 줄 주체가 사라져 남는다. 그래서 먼저 지운다 (⑤ 6.2).
-        echo "■ EKS 안의 vet2 네임스페이스를 먼저 지운다 (ALB, EBS)"
+        echo "■ EKS 안의 vet2, vet2-rds 네임스페이스를 먼저 지운다 (ALB 2개, EBS)"
         local kc; kc="$(mktemp)"
         aws --region "$REGION" eks update-kubeconfig --name vet2-eks --kubeconfig "$kc" > /dev/null
         command -v cygpath > /dev/null && kc="$(cygpath -m "$kc")"
-        kubectl --kubeconfig "$kc" delete namespace vet2 --ignore-not-found --wait=true --timeout=10m || true
+        kubectl --kubeconfig "$kc" delete namespace vet2 vet2-rds --ignore-not-found --wait=true --timeout=10m || true
         rm -f "$kc"
     fi
     echo "■ vet2-$s 지우기"
@@ -53,22 +54,22 @@ down() {
 case "${1:-}" in
     up)
         case "${2:-}" in
-            all) for s in network ecr kubeadm eks; do up "$s"; done ;;
-            network|ecr|kubeadm|eks) up "$2" ;;
-            *) echo "up <network|ecr|kubeadm|eks|all>" >&2; exit 2 ;;
+            all) for s in network ecr kubeadm eks rds; do up "$s"; done ;;
+            network|ecr|kubeadm|eks|rds) up "$2" ;;
+            *) echo "up <network|ecr|kubeadm|eks|rds|all>" >&2; exit 2 ;;
         esac ;;
     down)
         case "${2:-}" in
-            all) for s in eks kubeadm ecr network; do down "$s"; done ;;
-            network|ecr|kubeadm|eks) down "$2" ;;
-            *) echo "down <eks|kubeadm|ecr|network|all>" >&2; exit 2 ;;
+            all) for s in rds eks kubeadm ecr network; do down "$s"; done ;;
+            network|ecr|kubeadm|eks|rds) down "$2" ;;
+            *) echo "down <rds|eks|kubeadm|ecr|network|all>" >&2; exit 2 ;;
         esac ;;
     status)
-        for s in network ecr kubeadm eks; do
+        for s in network ecr kubeadm eks rds; do
             printf '%-14s %s\n' "vet2-$s" "$($CF describe-stacks --stack-name "vet2-$s" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo 없음)"
         done ;;
     validate)
-        for s in network ecr kubeadm eks; do
+        for s in network ecr kubeadm eks rds; do
             printf '%-12s ' "$s.yaml"
             $CF validate-template --template-body "file://$DIR/$s.yaml" --query 'Description' --output text
         done ;;

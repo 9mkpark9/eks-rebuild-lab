@@ -3,7 +3,8 @@
 #   1) 다시 배포     web 과 서비스 3개를 차례로 rollout restart
 #   2) 업데이트·롤백  clinic 이미지를 다른 태그로 바꿨다가 rollout undo
 #   3) 자동 복구     Pod 하나를 지운다
-#   4) 데이터 유지   예약을 하나 만들고 MySQL Pod 를 지운 뒤 그 예약이 남아 있는지 본다
+#   4) 데이터 유지   예약을 하나 만들고 DB 를 다시 시작한 뒤 그 예약이 남아 있는지 본다
+#                    클러스터 안 MySQL(로컬)이면 그 Pod 를 지우고, 없으면 RDS 를 다시 시작한다 (aws rds reboot-db-instance)
 #
 #   v2/tests/k8s-ops.sh --base-url http://<주소> -n vet2 --new-clinic-image <이미지:태그> [--context <컨텍스트>] [--only "1 3"]
 #
@@ -75,7 +76,7 @@ if has 3; then
     for a in web reservation; do echo "■ 3. 자동 복구 ($a Pod 하나 삭제)"; with_traffic "$a 삭제" delete_pod $a; done
 fi
 if has 4; then
-    echo "■ 4. 데이터 유지 (예약을 만들고 MySQL Pod 를 지운다)"
+    echo "■ 4. 데이터 유지 (예약을 만들고 DB 를 다시 시작한다)"
     J="$WORK/cookie.txt"
     curl -s -o /dev/null -c "$J" -H 'Content-Type: application/json' -d '{"loginId":"owner290","password":"test-only"}' "$BASE/api/auth/login"
     PET=$(curl -s -b "$J" "$BASE/api/pets" | grep -o '"petId":[0-9]*' | head -1 | cut -d: -f2)
@@ -88,12 +89,22 @@ if has 4; then
         [ -n "$RID" ] && break
     done
     echo "  만든 예약: ${RID:-만들지 못함} ($D)"
-    P=$($K get pod -l app=mysql -o jsonpath='{.items[0].metadata.name}')
-    with_traffic "MySQL 삭제" bash -c "$K delete pod $P > /dev/null; s=\$(date +%s); until [ \"\$(curl -s -m 3 -o /dev/null -w '%{http_code}' $BASE/api/notices)\" = 200 ]; do sleep 1; [ \$(( \$(date +%s) - s )) -gt 240 ] && break; done; echo \"  MySQL Pod 를 지운 뒤 공지 조회가 다시 200 이 되기까지 \$(( \$(date +%s) - s ))초\""
+    R="aws --region ${AWS_REGION:-ap-northeast-2} rds"
+    P=$($K get pod -l app=mysql -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    if [ -n "$P" ]; then
+        WHAT="MySQL Pod 삭제"; RESTART="$K delete pod $P > /dev/null"
+    else
+        # RDS: 재시작 명령은 바로 돌아오고, DB 가 실제로 내려가는 것은 그 뒤다.
+        # 그래서 다시 available 이 될 때까지 기다린 다음에 응답을 본다 (곧바로 보면 내려가기 전의 200 을 보게 된다)
+        WHAT="RDS 재시작"; RESTART="$R reboot-db-instance --db-instance-identifier vet2-db --query DBInstance.DBInstanceStatus --output text; sleep 5; $R wait db-instance-available --db-instance-identifier vet2-db; echo \"  명령부터 DB 가 다시 available 이 되기까지 \$(( \$(date +%s) - s ))초\""
+    fi
+    with_traffic "$WHAT" bash -c "s=\$(date +%s); $RESTART; until [ \"\$(curl -s -m 3 -o /dev/null -w '%{http_code}' $BASE/api/notices)\" = 200 ]; do sleep 1; [ \$(( \$(date +%s) - s )) -gt 900 ] && break; done; echo \"  명령부터 공지 조회가 다시 200 이 되기까지 \$(( \$(date +%s) - s ))초\""
     curl -s -o /dev/null -c "$J" -H 'Content-Type: application/json' -d '{"loginId":"owner290","password":"test-only"}' "$BASE/api/auth/login"
+    # 예약 조회가 200 으로 답할 때까지 기다린 뒤 확인한다. DB 가 돌아오기 전에 보면 "없다"로 잘못 나온다
+    for _ in $(seq 1 60); do [ "$(curl -s -m 5 -o /dev/null -w '%{http_code}' -b "$J" "$BASE/api/reservations/me")" = 200 ] && break; sleep 2; done
     ST=$(curl -s -b "$J" "$BASE/api/reservations/me" | grep -o "\"reservationId\":$RID,[^}]*" | grep -o '"status":"[A-Z]*"')
-    if [ -n "$RID" ] && [ -n "$ST" ]; then echo "  [통과] MySQL Pod 를 지운 뒤에도 예약 $RID 가 남아 있다 ($ST)"; curl -s -o /dev/null -b "$J" -X DELETE "$BASE/api/reservations/$RID"
-    else echo "  [실패] MySQL Pod 를 지운 뒤 예약 ${RID:-?} 가 없다"; FAILS=$((FAILS + 1)); fi
+    if [ -n "$RID" ] && [ -n "$ST" ]; then echo "  [통과] $WHAT 뒤에도 예약 $RID 가 남아 있다 ($ST)"; curl -s -o /dev/null -b "$J" -X DELETE "$BASE/api/reservations/$RID"
+    else echo "  [실패] $WHAT 뒤 예약 ${RID:-?} 가 없다"; FAILS=$((FAILS + 1)); fi
 fi
 echo; echo "실패한 항목: $FAILS"
 exit $FAILS

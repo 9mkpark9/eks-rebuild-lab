@@ -1,0 +1,14 @@
+# 선택 과제 "RDS 로 DB 전환": RDS 를 쓰는 overlay(kubeadm-rds, eks-rds)가 함께 쓰는 조각.
+#   - db-init: 빈 RDS 를 처음 한 번 초기화하는 Job (⑥ R-2)
+#   - DB_HOST: RDS 주소. 여기에는 RDS_HOST 라고만 적고, 적용할 때 v2/k8s/apply.sh 가 스택 vet2-rds 의 주소로 바꾼다
+#   - DB_POOL_MAX=3: RDS(db.t4g.micro)의 연결 한도 60 을 두 클러스터가 나눠 쓴다 (⑥ R-3)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - db-init.yaml
+configMapGenerator:
+  - name: vet-config
+    behavior: merge
+    literals:
+      - DB_HOST=RDS_HOST
+      - DB_POOL_MAX=3

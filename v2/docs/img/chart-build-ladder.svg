@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+  <rect width="1200" height="560" fill="#ffffff"/>
+  <text x="40" y="44" font-size="26" font-weight="700" fill="#0f172a">② 빌드 최적화: 방법을 하나씩 더했을 때 (auth 서비스)</text>
+  <text x="40" y="72" font-size="15" fill="#475569">WSL 2 Ubuntu · Docker Engine 29.9 · 소스 한 줄을 바꾼 뒤 다시 빌드 · 출처: 캡처 2-03-ladder-A ~ E (2026-11-24)</text>
+
+  <!-- 이미지 크기 -->
+  <text x="40" y="118" font-size="18" font-weight="700" fill="#0f172a">이미지 크기</text>
+  <g font-size="15" fill="#0f172a">
+    <text x="40" y="160">A  v0 그대로</text>
+    <rect x="250" y="142" width="300" height="26" fill="#94a3b8"/><text x="560" y="161">1.52 GB</text>
+    <text x="40" y="205">B  + .dockerignore</text>
+    <rect x="250" y="187" width="259" height="26" fill="#94a3b8"/><text x="519" y="206">1.31 GB</text>
+    <text x="40" y="250">C  + 멀티스테이지 (JRE)</text>
+    <rect x="250" y="232" width="109" height="26" fill="#3b82f6"/><text x="369" y="251">550 MB</text>
+    <text x="40" y="295">D  + JRE alpine</text>
+    <rect x="250" y="277" width="72" height="26" fill="#2563eb"/><text x="332" y="296">366 MB</text>
+    <text x="40" y="340">E  + Gradle 캐시 마운트</text>
+    <rect x="250" y="322" width="72" height="26" fill="#2563eb"/><text x="332" y="341">366 MB</text>
+  </g>
+
+  <!-- 재빌드 시간 -->
+  <text x="640" y="118" font-size="18" font-weight="700" fill="#0f172a">소스 한 줄 수정 뒤 재빌드</text>
+  <g font-size="15" fill="#0f172a">
+    <text x="640" y="160">A</text><rect x="680" y="142" width="400" height="26" fill="#94a3b8"/><text x="1090" y="161">54.8초</text>
+    <text x="640" y="205">B</text><rect x="680" y="187" width="341" height="26" fill="#94a3b8"/><text x="1031" y="206">46.7초</text>
+    <text x="640" y="250">C</text><rect x="680" y="232" width="245" height="26" fill="#94a3b8"/><text x="935" y="251">33.5초</text>
+    <text x="640" y="295">D</text><rect x="680" y="277" width="229" height="26" fill="#94a3b8"/><text x="919" y="296">31.4초</text>
+    <text x="640" y="340">E</text><rect x="680" y="322" width="88" height="26" fill="#10b981"/><text x="778" y="341">12.1초</text>
+  </g>
+
+  <line x1="40" y1="380" x2="1160" y2="380" stroke="#e2e8f0"/>
+  <g font-size="15" fill="#334155">
+    <text x="40" y="414">· 보낸 빌드 컨텍스트: A 112.66 MB → B 부터 6.88 kB (.dockerignore 로 빌드 결과물과 캐시 폴더를 뺐다)</text>
+    <text x="40" y="444">· 크기를 줄인 것은 멀티스테이지(C)와 alpine 베이스(D): 실행 이미지에 JDK·소스가 없다</text>
+    <text x="40" y="474">· 재빌드 시간을 줄인 것은 Gradle 캐시 마운트(E): 소스가 바뀌어도 라이브러리를 다시 받지 않는다</text>
+    <text x="40" y="504">· A ~ D 는 빌드할 때마다 의존성을 인터넷에서 받으므로, 시간은 네트워크 상태에 따라 측정마다 달라진다</text>
+  </g>
+</svg>

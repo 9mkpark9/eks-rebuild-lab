@@ -8,7 +8,6 @@ resources:
   - auth.yaml
   - clinic.yaml
   - reservation.yaml
-  - mysql.yaml
   - redis.yaml
   - pdb.yaml
 # 비밀이 아닌 설정. 이름 끝에 내용의 해시가 붙어서, 값을 바꾸면 그것을 쓰는 Pod 가 새로 뜬다.

@@ -1,0 +1,17 @@
+# K-7 재현: StatefulSet 의 볼륨 요청 틀(volumeClaimTemplates)은 만든 뒤에 바꿀 수 없다. 이 파일로 만들고 sts-b.yaml 로 바꿔 본다
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: sts-test }
+spec:
+  serviceName: sts-test
+  replicas: 0
+  selector: { matchLabels: { app: sts-test } }
+  template:
+    metadata: { labels: { app: sts-test } }
+    spec:
+      containers: [{ name: c, image: registry.k8s.io/pause:3.10 }]
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: { requests: { storage: 1Gi } }

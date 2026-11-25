@@ -1,0 +1,18 @@
+# web 을 ALB 로 연다. Auto Mode 가 이 Ingress 를 보고 ALB 를 만든다 (몇 분 걸린다).
+#   kubectl -n vet2 get ingress web      → ADDRESS 에 ALB 주소
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  annotations:
+    alb.ingress.kubernetes.io/target-type: ip # ALB 가 Pod 의 IP 로 바로 보낸다 (VPC IP 를 쓰는 Pod 라 가능)
+    alb.ingress.kubernetes.io/healthcheck-path: /health # readinessProbe 와 같은 경로
+    alb.ingress.kubernetes.io/inbound-cidrs: MY_CIDR # 이 PC 의 IP 에서만 접속
+spec:
+  ingressClassName: vet2-alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: web, port: { number: 80 } } }

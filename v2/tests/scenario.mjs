@@ -16,6 +16,10 @@
 //                       비밀번호는 환경 변수 DB_AUTH_PASSWORD, DB_CLINIC_PASSWORD, DB_RESERVATION_PASSWORD 로 준다.
 // --db-exec "CMD"       --db-container 대신, DB 안에서 명령을 실행할 앞부분을 준다 (쿠버네티스용).
 //                       예: --db-exec "kubectl -n vet2 exec mysql-0 --"
+// --db-host HOST        DB 가 그 컨테이너 밖에 있을 때(RDS) 접속할 주소. --db-exec 에는 mysql 클라이언트가 있는 Pod 를 준다.
+//                       예: --db-exec "kubectl -n vet2 exec db-client --" --db-host <RDS 주소>   (v2/tests/rds-check.sh)
+//
+// "못 한다" 검사는 서비스 계정으로 로그인한 뒤 권한 때문에 막혀야 통과한다. 로그인부터 실패(ERROR 1045)하면 실패로 센다.
 //
 // 만든 예약은 끝에서 취소하므로 여러 번 돌려도 된다. 실패 수를 종료 코드로 돌려준다 (0 = 전부 통과).
 import { spawnSync } from 'node:child_process';
@@ -330,12 +334,13 @@ if (dbExec) {
   section('11. DB 계정 경계');
   const pw = { auth: process.env.DB_AUTH_PASSWORD, clinic: process.env.DB_CLINIC_PASSWORD, reservation: process.env.DB_RESERVATION_PASSWORD };
   const run = (svc, query) => {
-    const r = spawnSync(dbExec[0], [...dbExec.slice(1), 'env', `MYSQL_PWD=${pw[svc]}`, 'mysql', `-uvet_${svc}`, '-N', '-e', query], { encoding: 'utf8' });
+    const host = opt['db-host'] ? ['-h', opt['db-host']] : [];
+    const r = spawnSync(dbExec[0], [...dbExec.slice(1), 'env', `MYSQL_PWD=${pw[svc]}`, 'mysql', ...host, `-uvet_${svc}`, '-N', '-e', query], { encoding: 'utf8' });
     const err = (r.stderr ?? '').split('\n').find((l) => l.startsWith('ERROR')) ?? '';
     return { ok: r.status === 0, out: (r.stdout ?? '').trim(), err: err.replace(/^ERROR (\d+) \(\w+\) at line \d+: /, 'ERROR $1: ').replace(/ to user .*| in 'field list'/, '') };
   };
   const allow = (id, title, svc, query) => { const r = run(svc, query); check(id, title, r.ok, r.ok ? `결과 ${r.out}` : r.err); };
-  const deny = (id, title, svc, query) => { const r = run(svc, query); check(id, title, !r.ok && /denied|Unknown column/.test(r.err), r.ok ? `막히지 않음 (결과 ${r.out})` : r.err); };
+  const deny = (id, title, svc, query) => { const r = run(svc, query); check(id, title, !r.ok && !/^ERROR 1045/.test(r.err) && /denied|Unknown column/.test(r.err), r.ok ? `막히지 않음 (결과 ${r.out})` : r.err); };
   allow('11-1', 'auth 계정은 자기 사용자 테이블을 읽는다', 'auth', 'SELECT COUNT(*) FROM vet_auth.users');
   deny('11-2', 'auth 계정은 반려동물을 읽지 못한다', 'auth', 'SELECT COUNT(*) FROM vet_clinic.pets');
   deny('11-3', 'clinic 계정은 사용자를 읽지 못한다', 'clinic', 'SELECT COUNT(*) FROM vet_auth.users');

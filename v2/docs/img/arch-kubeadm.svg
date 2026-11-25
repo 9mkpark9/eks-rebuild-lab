@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+  <rect width="1200" height="620" fill="#ffffff"/>
+  <text x="40" y="44" font-size="26" font-weight="700" fill="#0f172a">③ EC2 kubeadm 클러스터</text>
+  <text x="40" y="72" font-size="15" fill="#475569">VPC 10.20.0.0/16 · ap-northeast-2 · 노드 3대 (t3.medium) · Flannel VXLAN · DB 는 클러스터 안 (StatefulSet + 워커1 디스크)</text>
+
+  <!-- 사용자 -->
+  <rect x="40" y="110" width="170" height="70" rx="10" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="125" y="140" font-size="16" text-anchor="middle" fill="#0f172a">이 PC (브라우저)</text>
+  <text x="125" y="162" font-size="13" text-anchor="middle" fill="#64748b">허용된 IP 하나</text>
+  <path d="M210 145 H290" stroke="#2563eb" stroke-width="2.5" marker-end="url(#a)"/>
+  <text x="250" y="133" font-size="12" text-anchor="middle" fill="#2563eb">:30080</text>
+  <path d="M125 180 V560 H290" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#g)"/>
+  <text x="135" y="545" font-size="12" fill="#64748b">kubectl :6443</text>
+
+  <!-- VPC -->
+  <rect x="290" y="95" width="880" height="500" rx="14" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="310" y="122" font-size="14" fill="#475569">퍼블릭 서브넷 10.20.1.0/24 (2a) · 보안 그룹 vet2-nodes: 밖→30080/30081/6443 (이 PC 만), 노드끼리 UDP 8472 · TCP 6443 · 10250</text>
+
+  <!-- worker1 -->
+  <rect x="310" y="140" width="400" height="300" rx="12" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="330" y="168" font-size="18" font-weight="700" fill="#1e3a8a">vet2-w1 (워커)</text>
+  <g font-size="14" fill="#0f172a">
+    <rect x="330" y="185" width="170" height="40" rx="6" fill="#fff" stroke="#93c5fd"/><text x="415" y="210" text-anchor="middle">web (Apache)</text>
+    <rect x="520" y="185" width="170" height="40" rx="6" fill="#fff" stroke="#93c5fd"/><text x="605" y="210" text-anchor="middle">auth</text>
+    <rect x="330" y="235" width="170" height="40" rx="6" fill="#fff" stroke="#93c5fd"/><text x="415" y="260" text-anchor="middle">clinic</text>
+    <rect x="520" y="235" width="170" height="40" rx="6" fill="#fff" stroke="#93c5fd"/><text x="605" y="260" text-anchor="middle">reservation</text>
+    <rect x="330" y="300" width="360" height="56" rx="6" fill="#fef3c7" stroke="#f59e0b"/><text x="510" y="324" text-anchor="middle" font-weight="700">mysql-0 (StatefulSet)</text><text x="510" y="344" text-anchor="middle" font-size="12" fill="#92400e">Service: ClusterIP 만 — 밖에서 닿지 않음</text>
+    <rect x="330" y="370" width="360" height="50" rx="6" fill="#fffbeb" stroke="#f59e0b" stroke-dasharray="4 3"/><text x="510" y="400" text-anchor="middle" font-size="13" fill="#92400e">볼륨: 워커1 디스크 /var/lib/vet2-mysql (local PV)</text>
+  </g>
+
+  <!-- worker2 -->
+  <rect x="740" y="140" width="400" height="300" rx="12" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="760" y="168" font-size="18" font-weight="700" fill="#1e3a8a">vet2-w2 (워커)</text>
+  <g font-size="14" fill="#0f172a">
+    <rect x="760" y="185" width="170" height="40" rx="6" fill="#fff" stroke="#93c5fd"/><text x="845" y="210" text-anchor="middle">web (Apache)</text>
+    <rect x="950" y="185" width="170" height="40" rx="6" fill="#fff" stroke="#93c5fd"/><text x="1035" y="210" text-anchor="middle">auth</text>
+    <rect x="760" y="235" width="170" height="40" rx="6" fill="#fff" stroke="#93c5fd"/><text x="845" y="260" text-anchor="middle">clinic</text>
+    <rect x="950" y="235" width="170" height="40" rx="6" fill="#fff" stroke="#93c5fd"/><text x="1035" y="260" text-anchor="middle">reservation</text>
+    <rect x="760" y="300" width="170" height="56" rx="6" fill="#fce7f3" stroke="#ec4899"/><text x="845" y="333" text-anchor="middle">redis (세션)</text>
+    <rect x="950" y="300" width="170" height="56" rx="6" fill="#ecfdf5" stroke="#10b981"/><text x="1035" y="333" text-anchor="middle">CoreDNS</text>
+  </g>
+  <text x="725" y="470" font-size="13" text-anchor="middle" fill="#475569">복제본 2개를 두 워커에 나눈다 (topologySpreadConstraints + matchLabelKeys)</text>
+
+  <!-- control plane -->
+  <rect x="310" y="490" width="830" height="80" rx="12" fill="#f1f5f9" stroke="#64748b"/>
+  <text x="330" y="518" font-size="18" font-weight="700" fill="#334155">vet2-cp (컨트롤 플레인)</text>
+  <text x="330" y="548" font-size="14" fill="#334155">API 서버 · etcd · 스케줄러 · 컨트롤러 매니저 · CoreDNS (하나는 여기, 하나는 워커2 — 같은 노드에 몰리지 않게)</text>
+
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+    <marker id="g" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+  </defs>
+</svg>

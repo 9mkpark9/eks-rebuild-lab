@@ -1,0 +1,18 @@
+# K-7 재현: sts-a.yaml 에서 볼륨 종류(storageClassName)만 더했다
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: sts-test }
+spec:
+  serviceName: sts-test
+  replicas: 0
+  selector: { matchLabels: { app: sts-test } }
+  template:
+    metadata: { labels: { app: sts-test } }
+    spec:
+      containers: [{ name: c, image: registry.k8s.io/pause:3.10 }]
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        storageClassName: vet2-local
+        accessModes: [ReadWriteOnce]
+        resources: { requests: { storage: 1Gi } }

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+  <rect width="1200" height="560" fill="#ffffff"/>
+  <text x="40" y="44" font-size="26" font-weight="700" fill="#0f172a">⑥ 선택 과제: DB 를 RDS 로 (사설 서브넷)</text>
+  <text x="40" y="72" font-size="15" fill="#475569">필수 구성(vet2)은 그대로 두고, 같은 클러스터에 RDS 를 쓰는 구성(vet2-rds)을 하나 더 띄웠다 · 두 클러스터가 RDS 하나를 함께 쓴다</text>
+
+  <rect x="40" y="100" width="520" height="220" rx="14" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="60" y="130" font-size="19" font-weight="700" fill="#1e3a8a">kubeadm (EC2 3대)</text>
+  <g font-size="14" fill="#0f172a">
+    <rect x="60" y="148" width="480" height="58" rx="8" fill="#fff" stroke="#93c5fd"/>
+    <text x="78" y="173">vet2 (필수): 앱 + mysql-0 (노드 디스크) · NodePort 30080</text>
+    <text x="78" y="195" fill="#64748b" font-size="13">DB 가 노드에 묶임 → 그 노드가 죽으면 DB 도 멈춤</text>
+    <rect x="60" y="218" width="480" height="58" rx="8" fill="#fff" stroke="#10b981" stroke-width="2"/>
+    <text x="78" y="243">vet2-rds (선택): 앱만 · NodePort 30081 · DB_HOST = RDS</text>
+    <text x="78" y="265" fill="#64748b" font-size="13">초기화 Job db-init · 연결 수 3 (DB_POOL_MAX)</text>
+  </g>
+  <text x="60" y="305" font-size="13" fill="#475569">보안 그룹 vet2-nodes (노드)</text>
+
+  <rect x="640" y="100" width="520" height="220" rx="14" fill="#ecfdf5" stroke="#10b981"/>
+  <text x="660" y="130" font-size="19" font-weight="700" fill="#065f46">EKS Auto Mode</text>
+  <g font-size="14" fill="#0f172a">
+    <rect x="660" y="148" width="480" height="58" rx="8" fill="#fff" stroke="#93c5fd"/>
+    <text x="678" y="173">vet2 (필수): 앱 + mysql-0 (EBS) · ALB 1</text>
+    <text x="678" y="195" fill="#64748b" font-size="13">EBS 는 한 가용 영역에만 붙는다</text>
+    <rect x="660" y="218" width="480" height="58" rx="8" fill="#fff" stroke="#10b981" stroke-width="2"/>
+    <text x="678" y="243">vet2-rds (선택): 앱만 · ALB 2 · DB_HOST = RDS</text>
+    <text x="678" y="265" fill="#64748b" font-size="13">같은 component (k8s/components/rds) 를 쓴다</text>
+  </g>
+  <text x="660" y="305" font-size="13" fill="#475569">EKS 클러스터 보안 그룹 (Auto Mode 노드)</text>
+
+  <path d="M300 320 V390 H560" stroke="#10b981" stroke-width="2.5" fill="none" marker-end="url(#a)"/>
+  <path d="M900 320 V390 H640" stroke="#10b981" stroke-width="2.5" fill="none" marker-end="url(#a)"/>
+  <text x="600" y="375" font-size="14" text-anchor="middle" fill="#065f46" font-weight="700">TCP 3306 — 두 보안 그룹에서만</text>
+
+  <rect x="220" y="400" width="760" height="130" rx="14" fill="#fefce8" stroke="#ca8a04" stroke-width="2"/>
+  <text x="600" y="430" font-size="15" text-anchor="middle" fill="#713f12">사설 서브넷 10.20.11.0/24 (2a) · 10.20.12.0/24 (2c) — 라우팅 표에 VPC 안(local) 경로만, 인터넷 경로 없음</text>
+  <text x="600" y="468" font-size="20" font-weight="700" text-anchor="middle" fill="#0f172a">RDS vet2-db · MySQL 8.4 · db.t4g.micro · 단일 AZ</text>
+  <text x="600" y="498" font-size="14" text-anchor="middle" fill="#475569">공인 IP 없음 · gp3 20GB 암호화 · 백업 1일 · 관리자 비밀번호는 Secrets Manager (RDS 가 만듦) · 연결 한도 60</text>
+
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#10b981"/></marker></defs>
+</svg>

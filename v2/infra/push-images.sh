@@ -7,7 +7,7 @@ REGION="${AWS_REGION:-ap-northeast-2}"
 REG="$(aws sts get-caller-identity --query Account --output text | tr -d '\r').dkr.ecr.$REGION.amazonaws.com"
 aws --region "$REGION" ecr get-login-password | docker login --username AWS --password-stdin "$REG" > /dev/null
 t0=$(date +%s)
-for i in auth:1.0.0 clinic:1.0.0 clinic:1.0.1 reservation:1.0.0 web:1.0.0 db:1.0.0; do
+for i in auth:1.0.0 clinic:1.0.0 clinic:1.0.1 reservation:1.0.0 web:1.0.0 db:1.0.0 db:1.1.0; do
     docker tag "vet2-$i" "$REG/vet2-$i"
     docker push -q "$REG/vet2-$i" > /dev/null
     echo "  올림: vet2-$i"

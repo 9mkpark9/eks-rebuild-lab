@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: "2010-09-09"
+# 스택 5: RDS MySQL — 선택 과제 "RDS 로 DB 전환". kubeadm 과 EKS 의 RDS 구성(네임스페이스 vet2-rds)이 같은 인스턴스를 쓴다.
+# 필수 구성(네임스페이스 vet2)은 클러스터 안 MySQL 을 쓰고 이 스택과 무관하다.
+#   v2/infra/stacks.sh up rds        (network, kubeadm, eks 다음)
+#
+# - 사설 서브넷(vet2-private-a, -c)에 둔다. 인터넷으로 가는 경로가 없고, 공인 IP 도 없다 (PubliclyAccessible: false).
+#   VPC 안에서도 아래 두 보안 그룹에서 오는 3306 만 받는다.
+#     vet2-NodeSg       : kubeadm 노드 (Pod 의 접속은 Flannel 이 노드 IP 로 바꿔 내보낸다)
+#     vet2-EksClusterSg : EKS Auto Mode 노드
+# - 관리자(admin) 비밀번호는 RDS 가 만들어 Secrets Manager 에 둔다 (ManageMasterUserPassword).
+#   템플릿, 명령줄, 스택 기록 어디에도 비밀번호가 나타나지 않는다. 쿠버네티스로는 v2/k8s/rds-secret.sh 가 옮긴다.
+# - 서비스 계정 3개(vet_auth 등)와 스키마는 RDS 가 아니라 클러스터의 Job(db-init)이 만든다 (⑥ 문서).
+Description: vet2 RDS MySQL 8.4 in private subnets (optional task, shared by kubeadm and EKS)
+
+Parameters:
+  InstanceClass:
+    Type: String
+    Default: db.t4g.micro
+  MultiAz:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: true 면 다른 가용 영역에 대기 인스턴스를 둔다 (요금 2배). 실습은 false
+
+Resources:
+  # RDS 는 가용 영역 2개 이상의 서브넷을 요구한다 (지금은 2a 에만 떠도). 장애 조치나 Multi-AZ 때 2c 를 쓴다.
+  SubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: vet2-db-private
+      DBSubnetGroupDescription: vet2 db private subnets (2a, 2c)
+      SubnetIds: [!ImportValue vet2-PrivateSubnetA, !ImportValue vet2-PrivateSubnetC]
+
+  DbSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: vet2-db
+      GroupDescription: vet2 rds - 3306 from cluster nodes only
+      VpcId: !ImportValue vet2-VpcId
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 3306, ToPort: 3306, SourceSecurityGroupId: !ImportValue vet2-NodeSg, Description: kubeadm-nodes }
+        - { IpProtocol: tcp, FromPort: 3306, ToPort: 3306, SourceSecurityGroupId: !ImportValue vet2-EksClusterSg, Description: eks-auto-mode-nodes }
+      Tags: [{ Key: Name, Value: vet2-db }]
+
+  # 클러스터 안 MySQL 과 같게 둔 설정. 나머지는 RDS 기본값.
+  Params:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Family: mysql8.4
+      Description: vet2 mysql 8.4
+      Parameters:
+        character_set_server: utf8mb4
+        collation_server: utf8mb4_0900_ai_ci
+        time_zone: UTC
+      Tags: [{ Key: Name, Value: vet2-db }]
+
+  Db:
+    Type: AWS::RDS::DBInstance
+    # 실습 데이터는 모두 가짜다. 지울 때 스냅샷을 남기지 않는다 (남기면 그 보관 요금이 계속 나간다).
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      DBInstanceIdentifier: vet2-db
+      Engine: mysql
+      EngineVersion: "8.4.11"  # 이 지역의 RDS 기본 8.4 버전 (2026-11-24 확인)
+      DBInstanceClass: !Ref InstanceClass
+      AllocatedStorage: "20"
+      StorageType: gp3
+      StorageEncrypted: true
+      MultiAZ: !Ref MultiAz
+      DBSubnetGroupName: !Ref SubnetGroup
+      VPCSecurityGroups: [!Ref DbSg]
+      DBParameterGroupName: !Ref Params
+      PubliclyAccessible: false
+      MasterUsername: admin
+      ManageMasterUserPassword: true
+      BackupRetentionPeriod: 1
+      DeletionProtection: false
+      AutoMinorVersionUpgrade: false
+      Tags: [{ Key: Name, Value: vet2-db }]
+
+Outputs:
+  Endpoint: { Value: !GetAtt Db.Endpoint.Address, Export: { Name: vet2-DbEndpoint } }
+  AdminSecretArn: { Value: !GetAtt Db.MasterUserSecret.SecretArn }

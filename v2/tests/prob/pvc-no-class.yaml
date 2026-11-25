@@ -1,0 +1,7 @@
+# K-6 재현: StorageClass 도 미리 만든 볼륨(PV)도 없는 kubeadm 클러스터에서 볼륨을 요청한다 → Pending
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: data-test }
+spec:
+  accessModes: [ReadWriteOnce]
+  resources: { requests: { storage: 1Gi } }

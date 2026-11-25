@@ -8,7 +8,7 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 RUN="$ROOT/v2/_run"
 SVC="$ROOT/v2/workload/services.sh"
-JAR="$(mktemp)"
+JAR="$RUN/1-workload/cookie.txt"; command -v cygpath > /dev/null && JAR="$(cygpath -m "$JAR")"   # Windows 의 curl 은 /tmp 를 모른다
 trap 'rm -f "$JAR"' EXIT
 A=http://127.0.0.1:28081; C=http://127.0.0.1:28082; R=http://127.0.0.1:28083
 
@@ -43,7 +43,8 @@ curl -s -o /dev/null -c "$JAR" -H 'Content-Type: application/json' -d '{"loginId
 probe "기준: 모두 정상"
 
 echo; echo "■ A. clinic 서비스를 멈춘다"
-taskkill //PID "$(netstat -ano | grep -E '[:.]28082 .*LISTENING' | awk '{print $NF}' | head -1)" //F > /dev/null
+if command -v taskkill > /dev/null 2>&1; then taskkill //PID "$(netstat -ano | grep -E '[:.]28082 .*LISTENING' | awk '{print $NF}' | head -1)" //F > /dev/null
+else kill -9 "$(ss -ltnpH 'sport = :28082' | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2)"; fi
 sleep 1
 probe "clinic 중지"
 bash "$SVC" start | sed 's/^/    /'

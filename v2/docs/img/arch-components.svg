@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 470" font-family="Malgun Gothic, Apple SD Gothic Neo, sans-serif">
+  <rect width="1100" height="470" fill="#ffffff"/>
+  <text x="40" y="42" font-size="24" font-weight="700" fill="#0f172a">보듬 동물병원 예약 시스템 — 구성 요소</text>
+  <text x="40" y="68" font-size="14" fill="#475569">서비스 3개는 서로 부르지 않는다 · 같은 Redis(세션)와 같은 MySQL(서비스마다 스키마·계정이 다름)로만 이어진다</text>
+
+  <rect x="430" y="90" width="240" height="50" rx="10" fill="#f1f5f9" stroke="#94a3b8"/>
+  <text x="550" y="121" font-size="16" text-anchor="middle" fill="#0f172a">브라우저 (보호자 · 간호사 · 원장)</text>
+  <path d="M550 140 V170" stroke="#64748b" stroke-width="2" marker-end="url(#m)"/>
+
+  <rect x="330" y="172" width="440" height="62" rx="10" fill="#eef2ff" stroke="#6366f1"/>
+  <text x="550" y="198" font-size="17" font-weight="700" text-anchor="middle" fill="#312e81">web — Apache httpd</text>
+  <text x="550" y="221" font-size="13" text-anchor="middle" fill="#4338ca">화면(React 예약 화면, 소개 페이지) + /api 를 경로에 따라 세 서비스로</text>
+
+  <g stroke="#64748b" stroke-width="2" fill="none">
+    <path d="M420 234 L230 280" marker-end="url(#m)"/><path d="M550 234 V280" marker-end="url(#m)"/><path d="M680 234 L870 280" marker-end="url(#m)"/>
+  </g>
+  <g font-size="14" fill="#0f172a">
+    <rect x="110" y="282" width="240" height="70" rx="10" fill="#eff6ff" stroke="#3b82f6"/>
+    <text x="230" y="308" text-anchor="middle" font-size="16" font-weight="700">auth</text><text x="230" y="331" text-anchor="middle" fill="#475569">로그인 · 내 정보 · 로그아웃</text>
+    <rect x="430" y="282" width="240" height="70" rx="10" fill="#eff6ff" stroke="#3b82f6"/>
+    <text x="550" y="308" text-anchor="middle" font-size="16" font-weight="700">clinic</text><text x="550" y="331" text-anchor="middle" fill="#475569">반려동물 · 공지 · 진료 시간표</text>
+    <rect x="750" y="282" width="240" height="70" rx="10" fill="#eff6ff" stroke="#3b82f6"/>
+    <text x="870" y="308" text-anchor="middle" font-size="16" font-weight="700">reservation</text><text x="870" y="331" text-anchor="middle" fill="#475569">예약 · 간호사 · 원장 화면</text>
+  </g>
+  <text x="550" y="374" font-size="12" text-anchor="middle" fill="#64748b">Java 21 · Spring Boot · 포트 8080 · 설정은 모두 환경 변수</text>
+
+  <g stroke="#94a3b8" stroke-width="1.5" fill="none">
+    <path d="M230 352 V400"/><path d="M550 352 V400"/><path d="M870 352 V400"/>
+  </g>
+  <rect x="110" y="400" width="560" height="50" rx="10" fill="#fef3c7" stroke="#f59e0b"/>
+  <text x="390" y="423" font-size="16" font-weight="700" text-anchor="middle" fill="#78350f">MySQL 8.4 — 예약 데이터 (유일하게 잃으면 안 되는 것)</text>
+  <text x="390" y="442" font-size="12" text-anchor="middle" fill="#92400e">스키마 vet_auth · vet_clinic · vet_reservation, 계정도 서비스마다</text>
+  <rect x="700" y="400" width="290" height="50" rx="10" fill="#fce7f3" stroke="#ec4899"/>
+  <text x="845" y="423" font-size="16" font-weight="700" text-anchor="middle" fill="#831843">Redis 7 — 로그인 세션</text>
+  <text x="845" y="442" font-size="12" text-anchor="middle" fill="#9d174d">잃으면 모두 다시 로그인</text>
+  <defs><marker id="m" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker></defs>
+</svg>
