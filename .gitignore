@@ -26,3 +26,7 @@ web/.impeccable/
 .env.*
 *.env
 !.env.example
+
+# 내부용 문서 — 이 PC 에만 둔다
+v2/docs/0-템플릿-발표구성.md
+v2/docs/시연-계획.md
